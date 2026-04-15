@@ -118,10 +118,10 @@ export function Header() {
 
         {/* The Dynamic Glass Pill */}
         <div 
-          className={`pointer-events-auto flex items-center justify-between md:justify-center w-[95%] md:w-auto gap-2 md:gap-6 p-1.5 md:p-2 rounded-full transition-colors duration-500 ${
+          className={`pointer-events-auto flex items-center justify-between md:justify-center w-[98%] sm:w-[95%] md:w-auto gap-1 md:gap-6 p-1 md:p-2 rounded-full transition-colors duration-500 ${
             isTop 
-              ? "bg-black/90 md:bg-black/50 md:backdrop-blur-xl border border-white/10 shadow-sm" 
-              : "bg-black/95 md:bg-black/80 md:backdrop-blur-xl border border-white/20 shadow-lg md:shadow-[0_8px_32px_rgba(255,255,255,0.05)]"
+              ? "bg-black/60 backdrop-blur-xl border border-white/10" 
+              : "bg-black/80 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_-8px_rgba(255,255,255,0.1)]"
           }`}
         >
           {/* Logo & Mobile CTA Area */}
@@ -152,9 +152,9 @@ export function Header() {
             </Link>
 
             {/* Mobile CTA (اطلب الآن) Next to Logo */}
-            <Link to="/services" className="md:hidden flex-1 mr-1.5 ml-1">
-              <span className="flex items-center justify-center gap-1.5 h-10 w-full px-4 rounded-full bg-white text-black text-xs font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform">
-                <ShoppingCart size={14} />
+            <Link to="/services" className="md:hidden flex-1 mr-1 ml-0.5">
+              <span className="flex items-center justify-center gap-1 sm:gap-1.5 h-9 w-full px-2 sm:px-4 rounded-full bg-white text-black text-[11px] sm:text-xs font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                <ShoppingCart size={13} />
                 <span className="whitespace-nowrap">اطلب الآن</span>
               </span>
             </Link>
@@ -193,17 +193,17 @@ export function Header() {
           </div>
 
           {/* Right Section: Mobile Auth + Cart + Heart + Desktop CTA */}
-          <div className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             
             {/* Mobile Actions */}
-            <div className="flex md:hidden items-center gap-1">
+            <div className="flex md:hidden items-center gap-0.5 sm:gap-1">
               {/* Mobile Currency Switcher */}
               <button
                 onClick={() => setShowCurrencyModal(true)}
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"
                 style={{ backdropFilter: "blur(10px)" }}
               >
-                <span className="text-xl filter drop-shadow-sm leading-none m-0 p-0" style={{ transform: "translateY(1px)" }}>
+                <span className="text-lg sm:text-xl filter drop-shadow-sm leading-none m-0 p-0" style={{ transform: "translateY(1px)" }}>
                   {currentCurrencyInfo.flag}
                 </span>
               </button>
@@ -211,40 +211,40 @@ export function Header() {
               {/* Mobile Heart */}
               <button
                 onClick={() => setShowFavorites(true)}
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"
                 style={{ backdropFilter: "blur(10px)" }}
               >
-                <Heart size={16} />
+                <Heart size={15} className="sm:w-4 sm:h-4" />
               </button>
 
               {/* Mobile Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"
                 style={{ backdropFilter: "blur(10px)" }}
               >
-                <ShoppingBag size={16} />
+                <ShoppingBag size={15} className="sm:w-4 sm:h-4" />
               </button>
               
               {/* Mobile Auth */}
               {user ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowAccountModal(true); }}
-                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 transition-all duration-300 flex items-center justify-center bg-white/10 shrink-0"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 transition-all duration-300 flex items-center justify-center bg-white/10 shrink-0"
                 >
                   {userPhoto ? (
                     <img src={userPhoto} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <span className="text-xs font-black text-white">{userInitial}</span>
+                    <span className="text-[10px] sm:text-xs font-black text-white">{userInitial}</span>
                   )}
                 </button>
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="w-10 h-10 rounded-full bg-white/10 border border-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 border border-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors shrink-0"
                   style={{ backdropFilter: "blur(10px)" }}
                 >
-                  <User size={16} />
+                  <User size={15} className="sm:w-4 sm:h-4" />
                 </button>
               )}
             </div>
