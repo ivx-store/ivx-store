@@ -821,3 +821,307 @@ select option {
   margin: 0.15rem 0;
 }
 
+/* ============================================================
+   Currency Switcher
+   ============================================================ */
+
+.currency-switcher {
+  position: relative;
+  z-index: 100;
+}
+
+.currency-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.65rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.currency-switcher-trigger:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.currency-switcher-flag {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.currency-switcher-code {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.currency-switcher-arrow {
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.currency-switcher-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.currency-switcher-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  background: rgba(10, 10, 10, 0.98);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255,255,255,0.1);
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* RTL: position on right side */
+[dir="rtl"] .currency-switcher-dropdown {
+  left: auto;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+.currency-switcher-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.currency-switcher-dropdown-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #fff;
+  font-family: inherit;
+}
+
+.currency-switcher-loading {
+  color: #f59e0b;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.currency-switcher-updated {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.currency-switcher-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.7); }
+}
+
+/* Search */
+.currency-switcher-search {
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.currency-switcher-search-icon {
+  position: absolute;
+  right: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  pointer-events: none;
+}
+
+.currency-switcher-search-input {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  color: #fff;
+  font-size: 0.78rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.currency-switcher-search-input:focus {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.currency-switcher-search-input::placeholder {
+  color: #555;
+}
+
+/* Currency List */
+.currency-switcher-list {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  padding: 0.25rem;
+}
+
+.currency-switcher-list::-webkit-scrollbar {
+  width: 4px;
+  display: block;
+}
+
+.currency-switcher-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.currency-switcher-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.currency-switcher-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.6rem;
+  font-family: inherit;
+  text-align: right;
+  color: #ccc;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.currency-switcher-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.currency-switcher-option.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.currency-switcher-option-flag {
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.currency-switcher-option-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.currency-switcher-option-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.currency-switcher-option-code {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #888;
+  direction: ltr;
+  text-align: right;
+}
+
+.currency-switcher-option-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.currency-switcher-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .currency-switcher-trigger {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: transparent;
+    gap: 0;
+  }
+
+  .currency-switcher-trigger:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: transparent;
+  }
+
+  .currency-switcher-flag {
+    font-size: 1.1rem;
+  }
+
+  .currency-switcher-code,
+  .currency-switcher-arrow {
+    display: none;
+  }
+
+  .currency-switcher-dropdown {
+    width: 260px;
+    position: absolute;
+    top: calc(100% + 15px);
+    left: -50px;
+    right: auto;
+    transform: none;
+  }
+
+  [dir="rtl"] .currency-switcher-dropdown {
+    right: -50px;
+    left: auto;
+    transform: none;
+  }
+}
+

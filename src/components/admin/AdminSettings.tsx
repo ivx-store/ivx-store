@@ -91,6 +91,16 @@ export function AdminSettings({ onCountChange }: AdminSettingsProps) {
               />
             </div>
             <div className="admin-form-group">
+              <label className="admin-form-label">البريد الإلكتروني</label>
+              <input
+                className="admin-form-input"
+                value={settings.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                placeholder="support@example.com"
+                dir="ltr"
+              />
+            </div>
+            <div className="admin-form-group">
               <label className="admin-form-label">رابط تيليجرام</label>
               <input
                 className="admin-form-input"

@@ -226,6 +226,7 @@ export interface OfferData {
 
 export interface SiteSettings {
   whatsappNumber: string;
+  email: string;
   instagramUrl: string;
   twitterUrl: string;
   tiktokUrl: string;
@@ -446,6 +447,7 @@ export async function deleteMessage(id: string) {
 
 const defaultSettings: SiteSettings = {
   whatsappNumber: "",
+  email: "",
   instagramUrl: "",
   twitterUrl: "",
   tiktokUrl: "",
@@ -483,11 +485,11 @@ export function generateFieldId(): string {
   return "field_" + Math.random().toString(36).substring(2, 9);
 }
 
-/** Shared date formatter for Arabic locale — used across admin and frontend */
+/** Shared date formatter — English locale for clear readability */
 export function formatTimestamp(timestamp: any): string {
   if (!timestamp) return "—";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return new Intl.DateTimeFormat("ar-IQ", {
+  return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

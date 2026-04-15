@@ -6,11 +6,13 @@ import { PageLayout } from "../components/PageLayout";
 import { OrderModal } from "../components/OrderModal";
 import { ServiceDetailsModal } from "../components/ServiceDetailsModal";
 import { Filter, Loader2, Search } from "lucide-react";
-import { ServiceData, getServices, getServiceTypes, formatDisplayPrice } from "../lib/firebase";
+import { ServiceData, getServices, getServiceTypes } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 import { Heart } from "lucide-react";
 
 export function ServicesPage() {
   const location = useLocation();
+  const { formatConvertedPrice } = useCurrency();
   const [services, setServices] = useState<ServiceData[]>([]);
   const [adminCats, setAdminCats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +230,7 @@ export function ServicesPage() {
                         {service.price && (
                           <div className="mb-3 md:mb-4">
                             <span className="text-sm md:text-lg font-black text-white">
-                              {formatDisplayPrice(service.price, service.currency)}
+                              {formatConvertedPrice(parseFloat(service.price) || 0, service.currency)}
                             </span>
                           </div>
                         )}

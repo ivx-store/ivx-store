@@ -4,9 +4,11 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Heart } from "lucide-react";
 import { OrderModal } from "./OrderModal";
 import { ServiceDetailsModal } from "./ServiceDetailsModal";
-import { ServiceData, getServices, formatDisplayPrice } from "../lib/firebase";
+import { ServiceData, getServices } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 
 export function OurServices() {
+  const { formatConvertedPrice } = useCurrency();
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -145,7 +147,7 @@ export function OurServices() {
                   {service.price && (
                     <div className="mb-3 md:mb-4">
                       <span className="text-sm md:text-lg font-black text-white">
-                        {formatDisplayPrice(service.price, service.currency)}
+                        {formatConvertedPrice(parseFloat(service.price) || 0, service.currency)}
                       </span>
                     </div>
                   )}

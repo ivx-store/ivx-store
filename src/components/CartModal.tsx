@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import { X, ShoppingBag, Clock, CheckCircle2, XCircle, RefreshCw, Package, Loader2, User } from "lucide-react";
 import { useAuth } from "../lib/AuthContext";
-import { getUserOrders, OrderData, formatTimestamp } from "../lib/firebase";
+import { getUserOrders, OrderData, formatTimestamp, formatPriceWithCommas, getCurrencySymbol } from "../lib/firebase";
 import { useDevicePerformance } from "../lib/useDevicePerformance";
 import { useBodyLock } from "../lib/useBodyLock";
 import { STATUS_CONFIG, ITEM_TYPE_LABELS } from "../lib/constants";
@@ -124,11 +124,16 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                     return (
                       <div key={order.id} className="bg-white/[0.03] rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all" style={{ borderRightColor: status.color, borderRightWidth: "3px" }}>
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Package size={14} className="text-gray-500" />
-                            <span className="text-sm font-bold text-white font-arabic">{order.itemTitle}</span>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Package size={14} className="text-gray-500 shrink-0" />
+                            <span className="text-sm font-bold text-white font-arabic truncate">{order.itemTitle}</span>
+                            {order.totalPrice !== undefined && order.totalPrice > 0 && (
+                              <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20 whitespace-nowrap shrink-0" dir="ltr">
+                                {formatPriceWithCommas(String(order.totalPrice))} {getCurrencySymbol(order.priceCurrency || "USD")}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold" style={{ background: status.bg, color: status.color }}>
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold shrink-0 ml-2" style={{ background: status.bg, color: status.color }}>
                             {status.icon}
                             {status.label}
                           </div>

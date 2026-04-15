@@ -7,6 +7,7 @@ import { useAuth } from "../lib/AuthContext";
 import { UserAuthModal } from "./UserAuthModal";
 import { useDevicePerformance } from "../lib/useDevicePerformance";
 import { useBodyLock } from "../lib/useBodyLock";
+import { useCurrency } from "../lib/CurrencyContext";
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ function CustomDropdown({
   const options = field.options || [];
   const hasPricing = field.pricingEnabled && field.pricingMode === "options_map";
   const currency = field.priceCurrency || "USD";
+  const { formatConvertedPrice } = useCurrency();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -62,7 +64,7 @@ function CustomDropdown({
           </span>
           {selectedPrice !== null && (
             <span className="order-dropdown-trigger-price">
-              {formatPriceWithCommas(String(selectedPrice))} {getCurrencySymbol(currency)}
+              {formatConvertedPrice(selectedPrice, currency)}
             </span>
           )}
         </div>
@@ -98,7 +100,7 @@ function CustomDropdown({
                     <span className="order-dropdown-option-label">{opt}</span>
                     {optPrice !== null && (
                       <span className="order-dropdown-option-price">
-                        {formatPriceWithCommas(String(optPrice))} {getCurrencySymbol(currency)}
+                        {formatConvertedPrice(optPrice, currency)}
                       </span>
                     )}
                   </div>
@@ -126,7 +128,7 @@ function PriceBreakdown({
   currency: Currency;
 }) {
   if (breakdown.length === 0 && total === 0) return null;
-  const sym = getCurrencySymbol(currency);
+  const { formatConvertedPrice } = useCurrency();
 
   return (
     <motion.div
@@ -143,7 +145,7 @@ function PriceBreakdown({
           <div key={i} className="order-price-breakdown-row">
             <span className="order-price-breakdown-label">{item.label}</span>
             <span className="order-price-breakdown-value">
-              {formatPriceWithCommas(String(item.value))} {sym}
+              {formatConvertedPrice(item.value, currency)}
             </span>
           </div>
         ))}
@@ -153,7 +155,7 @@ function PriceBreakdown({
             <div className="order-price-breakdown-row total">
               <span className="order-price-breakdown-label">الإجمالي</span>
               <span className="order-price-breakdown-value">
-                {formatPriceWithCommas(String(total))} {sym}
+                {formatConvertedPrice(total, currency)}
               </span>
             </div>
           </>
@@ -166,6 +168,7 @@ function PriceBreakdown({
 export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType = "service", basePrice, baseCurrency = "USD" }: OrderModalProps) {
   const { isLowEnd } = useDevicePerformance();
   const { user } = useAuth();
+  const { formatConvertedPrice } = useCurrency();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -506,7 +509,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                               {field.pricingEnabled && field.pricingMode === "per_unit" && field.pricePerUnit && (
                                 <div className="mt-1.5 text-xs text-gray-500 font-arabic font-medium flex items-center gap-1.5">
                                   <DollarSign size={11} />
-                                  سعر الوحدة: {formatPriceWithCommas(String(field.pricePerUnit))} {getCurrencySymbol(field.priceCurrency || baseCurrency)}
+                                  سعر الوحدة: {formatConvertedPrice(field.pricePerUnit, field.priceCurrency || baseCurrency)}
                                 </div>
                               )}
                             </div>
@@ -542,7 +545,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                                   {hasUnitPrice && lineTotal > 0 && (
                                     <div className="mr-auto bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1.5">
                                       <span className="text-sm font-bold text-emerald-400 font-arabic">
-                                        {formatPriceWithCommas(String(lineTotal))} {getCurrencySymbol(field.priceCurrency || baseCurrency)}
+                                        {formatConvertedPrice(lineTotal, field.priceCurrency || baseCurrency)}
                                       </span>
                                     </div>
                                   )}
@@ -550,7 +553,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                                 {hasUnitPrice && (
                                   <div className="mt-1.5 text-xs text-gray-500 font-arabic font-medium flex items-center gap-1.5">
                                     <DollarSign size={11} />
-                                    سعر الوحدة: {formatPriceWithCommas(String(unitPrice))} {getCurrencySymbol(field.priceCurrency || baseCurrency)}
+                                    سعر الوحدة: {formatConvertedPrice(unitPrice, field.priceCurrency || baseCurrency)}
                                   </div>
                                 )}
                               </div>
@@ -584,7 +587,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                                 {hasUnitPrice && lineTotal > 0 && (
                                   <div className="mt-2 text-center">
                                     <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-1 font-arabic">
-                                      = {formatPriceWithCommas(String(lineTotal))} {getCurrencySymbol(field.priceCurrency || baseCurrency)}
+                                      = {formatConvertedPrice(lineTotal, field.priceCurrency || baseCurrency)}
                                     </span>
                                   </div>
                                 )}
@@ -642,7 +645,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                             <span>تأكيد الطلب</span>
                             {hasPricing && total > 0 && (
                               <span className="bg-black/10 rounded-lg px-2 py-0.5 text-sm font-bold">
-                                {formatPriceWithCommas(String(total))} {getCurrencySymbol(baseCurrency)}
+                                {formatConvertedPrice(total, baseCurrency)}
                               </span>
                             )}
                           </>

@@ -27,6 +27,7 @@ import { SeoHead } from "./components/SeoHead";
 import { LayoutGrid, Package, Flame, ClipboardList, MessageCircle, Settings, Users, AlertCircle } from "lucide-react";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { onAuthChange, updateUserPresence, updateGuestPresence, checkUserBanned, logoutAdmin, type User } from "./lib/firebase";
+import { CurrencyProvider } from "./lib/CurrencyContext";
 import { useEffect } from "react";
 
 function AnimatedRoutes() {
@@ -194,7 +195,7 @@ function AppContent() {
   }
 
   return (
-    <>
+    <CurrencyProvider>
       <PresenceTracker />
       <CustomCursor />
       <ScrollToTop />
@@ -212,7 +213,7 @@ function AppContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </CurrencyProvider>
   );
 }
 

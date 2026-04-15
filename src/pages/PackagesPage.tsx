@@ -4,13 +4,15 @@ import { PageHero } from "../components/PageHero";
 import { PageLayout } from "../components/PageLayout";
 import { OrderModal } from "../components/OrderModal";
 import { CheckCircle2, Sparkles, ArrowLeft, Heart } from "lucide-react";
-import { PackageData, getPackages, formatDisplayPrice } from "../lib/firebase";
+import { PackageData, getPackages } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 
 export function PackagesPage() {
   const [packages, setPackages] = useState<PackageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageData | null>(null);
+  const { formatConvertedPrice } = useCurrency();
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("ivx_fav_packages") || "[]"); } catch { return []; }
   });
@@ -79,7 +81,7 @@ export function PackagesPage() {
               {packages.map((pkg, idx) => {
                 const bgColor = pkg.bgColor || "#000";
                 const accentColor = pkg.accentColor || "#ffffff";
-                const displayPrice = formatDisplayPrice(pkg.price, pkg.currency);
+                const displayPrice = formatConvertedPrice(parseFloat(pkg.price) || 0, pkg.currency);
 
                 return (
                   <motion.div

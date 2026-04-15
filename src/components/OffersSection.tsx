@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Clock, Flame, ArrowLeft, Percent, Sparkles } from "lucide-react";
 import { OrderModal } from "./OrderModal";
 import { OfferData, getActiveOffers } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 
 function CountdownTimer({ days, hours, minutes, endsAt }: { days: number; hours: number; minutes: number; endsAt?: any }) {
   const calcTimeFromEnd = () => {
@@ -67,6 +68,7 @@ export function OffersSection() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<OfferData | null>(null);
+  const { formatConvertedPrice } = useCurrency();
 
   useEffect(() => {
     getActiveOffers().then((data) => {
@@ -144,7 +146,8 @@ export function OffersSection() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto" dir="rtl">
             {offers.map((offer, idx) => {
-              const currencyLabel = offer.currency === "USD" ? "$" : "د.ع";
+              const convertedDiscounted = formatConvertedPrice(parseFloat(offer.discountedPrice) || 0, offer.currency);
+              const convertedOriginal = offer.originalPrice ? formatConvertedPrice(parseFloat(offer.originalPrice) || 0, offer.currency) : "";
               const showCountdown = offer.countdownEnabled && ((offer.countdownDays ?? 0) > 0 || (offer.countdownHours ?? 0) > 0 || (offer.countdownMinutes ?? 0) > 0);
 
               return (
@@ -223,16 +226,14 @@ export function OffersSection() {
                     <div className="flex items-end gap-3 mb-5">
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl md:text-3xl font-black text-white leading-none">
-                          {offer.discountedPrice}
+                          {convertedDiscounted}
                         </span>
-                        <span className="text-xs md:text-sm text-gray-500 font-bold">{currencyLabel}</span>
                       </div>
-                      {offer.originalPrice && (
+                      {convertedOriginal && (
                         <div className="flex items-baseline gap-1 pb-0.5">
                           <span className="text-sm text-gray-600 line-through font-medium">
-                            {offer.originalPrice}
+                            {convertedOriginal}
                           </span>
-                          <span className="text-[10px] text-gray-700">{currencyLabel}</span>
                         </div>
                       )}
                     </div>

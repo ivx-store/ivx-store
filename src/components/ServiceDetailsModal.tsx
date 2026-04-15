@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import { X, ShoppingCart, Heart } from "lucide-react";
-import { ServiceData, formatDisplayPrice } from "../lib/firebase";
+import { ServiceData } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 import { useDevicePerformance } from "../lib/useDevicePerformance";
 import { useBodyLock } from "../lib/useBodyLock";
 
@@ -25,6 +26,7 @@ export function ServiceDetailsModal({
 }: ServiceDetailsModalProps) {
   const { isLowEnd } = useDevicePerformance();
   const [mounted, setMounted] = useState(false);
+  const { formatConvertedPrice } = useCurrency();
 
   useEffect(() => {
     setMounted(true);
@@ -97,7 +99,7 @@ export function ServiceDetailsModal({
                 {service.price && (
                   <div className="inline-block px-4 py-2 bg-white/5 border border-white/10 rounded-xl mb-4">
                     <span className="text-lg md:text-xl font-black text-green-400" dir="ltr">
-                      {formatDisplayPrice(service.price, service.currency)}
+                      {formatConvertedPrice(parseFloat(service.price) || 0, service.currency)}
                     </span>
                   </div>
                 )}

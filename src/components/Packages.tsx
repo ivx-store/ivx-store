@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { ChevronRight, ChevronLeft, CheckCircle2, ArrowLeft } from "lucide-react";
 import { OrderModal } from "./OrderModal";
 import { useDevicePerformance } from "../lib/useDevicePerformance";
-import { PackageData, getPackages, formatDisplayPrice } from "../lib/firebase";
+import { PackageData, getPackages } from "../lib/firebase";
+import { useCurrency } from "../lib/CurrencyContext";
 
 export function Packages() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -13,6 +14,7 @@ export function Packages() {
   const [packages, setPackages] = useState<PackageData[]>([]);
   const [loading, setLoading] = useState(true);
   const { isMobile, isLowEnd } = useDevicePerformance();
+  const { formatConvertedPrice } = useCurrency();
 
   useEffect(() => {
     getPackages().then((data) => {
@@ -116,7 +118,7 @@ export function Packages() {
                 const diff = (index - currentIndex + packages.length) % packages.length;
                 const bgColor = pkg.bgColor || "#000";
                 const accentColor = pkg.accentColor || "#ffffff";
-                const displayPrice = formatDisplayPrice(pkg.price, pkg.currency);
+                const displayPrice = formatConvertedPrice(parseFloat(pkg.price) || 0, pkg.currency);
 
                 let x = 0;
                 let scale = 1;

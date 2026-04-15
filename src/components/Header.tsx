@@ -9,6 +9,9 @@ import { UserAuthModal } from "./UserAuthModal";
 import { AccountModal } from "./AccountModal";
 import { CartModal } from "./CartModal";
 import { FavoritesModal } from "./FavoritesModal";
+import { CurrencySwitcher } from "./CurrencySwitcher";
+import { CurrencyModal } from "./CurrencyModal";
+import { useCurrency } from "../lib/CurrencyContext";
 
 const links = [
   { name: "الرئيسية", path: "/" },
@@ -26,9 +29,11 @@ export function Header() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentCurrencyInfo } = useCurrency();
   
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -182,11 +187,27 @@ export function Header() {
             })}
           </nav>
 
+          {/* Currency Switcher - Desktop (inside pill, left of CTA) */}
+          <div className="hidden md:block">
+            <CurrencySwitcher />
+          </div>
+
           {/* Right Section: Mobile Auth + Cart + Heart + Desktop CTA */}
           <div className="flex items-center gap-1.5 md:gap-2">
             
             {/* Mobile Actions */}
             <div className="flex md:hidden items-center gap-1">
+              {/* Mobile Currency Switcher */}
+              <button
+                onClick={() => setShowCurrencyModal(true)}
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                style={{ backdropFilter: "blur(10px)" }}
+              >
+                <span className="text-xl filter drop-shadow-sm leading-none m-0 p-0" style={{ transform: "translateY(1px)" }}>
+                  {currentCurrencyInfo.flag}
+                </span>
+              </button>
+
               {/* Mobile Heart */}
               <button
                 onClick={() => setShowFavorites(true)}
@@ -266,6 +287,7 @@ export function Header() {
       <AccountModal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} />
       <CartModal isOpen={showCart} onClose={() => setShowCart(false)} />
       <FavoritesModal isOpen={showFavorites} onClose={() => setShowFavorites(false)} />
+      <CurrencyModal isOpen={showCurrencyModal} onClose={() => setShowCurrencyModal(false)} />
     </>
   );
 }
