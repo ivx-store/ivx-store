@@ -65,11 +65,71 @@ export function onAuthChange(callback: (user: User | null) => void) {
 
 export type { User };
 
+// ============ Users & Guests CRUD ============
+
+export interface SiteUser {
+  uid: string;
+  email: string | null;
+  isBanned: boolean;
+  lastSeen: Timestamp | null;
+  createdAt?: Timestamp;
+}
+
+export interface GuestSession {
+  id: string;
+  lastSeen: Timestamp | null;
+}
+
+export async function updateUserPresence(uid: string, email: string | null) {
+  const docRef = doc(db, "users", uid);
+  return setDoc(docRef, {
+    uid,
+    email,
+    lastSeen: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function updateGuestPresence(guestId: string) {
+  const docRef = doc(db, "guests", guestId);
+  return setDoc(docRef, {
+    id: guestId,
+    lastSeen: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function checkUserBanned(uid: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, "users", uid));
+  if (snap.exists() && snap.data().isBanned === true) {
+    return true;
+  }
+  return false;
+}
+
+export async function toggleUserBan(uid: string, isBanned: boolean) {
+  const docRef = doc(db, "users", uid);
+  return updateDoc(docRef, { isBanned });
+}
+
+export async function getAllUsers(): Promise<SiteUser[]> {
+  const q = query(collection(db, "users"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => {
+    const data = d.data();
+    return { ...data, uid: d.id } as SiteUser;
+  });
+}
+
+export async function getAllGuests(): Promise<GuestSession[]> {
+  const q = query(collection(db, "guests"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => d.data() as GuestSession);
+}
+
 // ============ Types ============
 
 export interface FormField {
   id: string;
-  type: "text" | "email" | "number" | "counter" | "slider" | "textarea" | "select";
+  type: "text" | "email" | "number" | "counter" | "slider" | "textarea" | "select" | "tel";
   label: string;
   placeholder?: string;
   required: boolean;
@@ -77,6 +137,22 @@ export interface FormField {
   max?: number;
   step?: number;
   options?: string[];
+  system?: boolean;
+}
+
+export function ensureSystemFields(fields: FormField[] = []): FormField[] {
+  let updated = [...fields];
+  if (!updated.some(f => f.id === "customerName")) {
+    updated = [{ id: "customerName", type: "text", label: "الاسم الكريم", placeholder: "اكتب اسمك هنا...", required: true, system: true }, ...updated];
+  }
+  if (!updated.some(f => f.id === "customerPhone")) {
+    const defaultIdx = updated.length > 0 ? 1 : 0;
+    updated.splice(defaultIdx, 0, { id: "customerPhone", type: "tel", label: "رقم الجوال", placeholder: "07X XXXX XXXX", required: true, system: true });
+  }
+  if (!updated.some(f => f.id === "customerNotes")) {
+    updated = [...updated, { id: "customerNotes", type: "textarea", label: "تفاصيل إضافية (اختياري)", placeholder: "أي تفاصيل أخرى تود إضافتها...", required: false, system: true }];
+  }
+  return updated;
 }
 
 export type Currency = "USD" | "IQD";
@@ -155,6 +231,9 @@ export interface OrderData {
   customerNotes: string;
   customFields: Record<string, any>;
   status: "pending" | "processing" | "completed" | "cancelled";
+  userId?: string;
+  userEmail?: string;
+  userRegisteredEmail?: string;
   createdAt?: Timestamp;
 }
 
@@ -293,10 +372,26 @@ export async function getOrders(): Promise<OrderData[]> {
 }
 
 export async function addOrder(data: Omit<OrderData, "id" | "createdAt">) {
+  const currentUser = auth.currentUser;
   return addDoc(collection(db, "orders"), {
     ...data,
+    userId: currentUser?.uid || "",
+    userRegisteredEmail: currentUser?.email || "",
     createdAt: serverTimestamp(),
   });
+}
+
+export async function getUserOrders(userId: string): Promise<OrderData[]> {
+  try {
+    const q = query(collection(db, "orders"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as OrderData));
+  } catch (err) {
+    // Fallback if composite index is missing
+    console.warn("Composite index not available for user orders, falling back", err);
+    const allOrders = await getOrders();
+    return allOrders.filter((o) => o.userId === userId);
+  }
 }
 
 export async function updateOrderStatus(id: string, status: OrderData["status"]) {

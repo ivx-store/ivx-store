@@ -9,6 +9,7 @@ import {
   getOffer,
   formatPriceWithCommas,
   stripCommas,
+  ensureSystemFields,
   OFFER_BADGE_PRESETS,
 } from "../../lib/firebase";
 import { FormFieldEditor } from "./FormFieldEditor";
@@ -41,8 +42,8 @@ const defaultOffer: OfferData = {
 };
 
 export function OfferEditor({ offerId, onBack, onSaved }: OfferEditorProps) {
-  const [data, setData] = useState<OfferData>(defaultOffer);
-  const [activeTab, setActiveTab] = useState<"details" | "form">("details");
+  const [data, setData] = useState<OfferData>({ ...defaultOffer, orderFormFields: ensureSystemFields([]) });
+  const [activeTab, setActiveTab] = useState<"details" | "form" | "style" | "countdown">("details");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!offerId);
   const [toast, setToast] = useState("");
@@ -54,6 +55,7 @@ export function OfferEditor({ offerId, onBack, onSaved }: OfferEditorProps) {
       setLoading(true);
       getOffer(offerId).then((o) => {
         if (o) {
+          o.orderFormFields = ensureSystemFields(o.orderFormFields);
           setData(o);
           setOrigPriceDisplay(formatPriceWithCommas(o.originalPrice || ""));
           setDiscPriceDisplay(formatPriceWithCommas(o.discountedPrice || ""));

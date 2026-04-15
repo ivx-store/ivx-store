@@ -11,6 +11,7 @@ import {
   saveServiceTypes,
   formatPriceWithCommas,
   stripCommas,
+  ensureSystemFields,
 } from "../../lib/firebase";
 import { FormFieldEditor } from "./FormFieldEditor";
 import { LivePreview } from "./LivePreview";
@@ -32,7 +33,7 @@ const defaultService: ServiceData = {
 };
 
 export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps) {
-  const [data, setData] = useState<ServiceData>(defaultService);
+  const [data, setData] = useState<ServiceData>({ ...defaultService, orderFormFields: ensureSystemFields([]) });
   const [activeTab, setActiveTab] = useState<"details" | "form">("details");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!serviceId);
@@ -54,6 +55,7 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
       setLoading(true);
       getService(serviceId).then((s) => {
         if (s) {
+          s.orderFormFields = ensureSystemFields(s.orderFormFields);
           setData(s);
           setPriceDisplay(formatPriceWithCommas(s.price || ""));
         }

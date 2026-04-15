@@ -45,7 +45,7 @@ export function ContactPage() {
         description="نحن هنا للإجابة على استفساراتك ومساعدتك في كل ما يخص الألعاب والاشتراكات. لا تتردد في التواصل."
       />
 
-      <section className="pb-24 md:pb-32 relative z-10" dir="rtl">
+      <section className="pb-24 md:pb-32 relative z-10 overflow-x-hidden" dir="rtl">
         <div className="container mx-auto px-5 md:px-8">
           <div className="grid lg:grid-cols-2 gap-8 md:gap-12 max-w-6xl mx-auto">
 

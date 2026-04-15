@@ -10,6 +10,7 @@ import {
   formatPriceWithCommas,
   stripCommas,
   PACKAGE_COLOR_PRESETS,
+  ensureSystemFields,
 } from "../../lib/firebase";
 import { FormFieldEditor } from "./FormFieldEditor";
 import { LivePreview } from "./LivePreview";
@@ -34,7 +35,7 @@ const defaultPackage: PackageData = {
 };
 
 export function PackageEditor({ packageId, onBack, onSaved }: PackageEditorProps) {
-  const [data, setData] = useState<PackageData>(defaultPackage);
+  const [data, setData] = useState<PackageData>({ ...defaultPackage, orderFormFields: ensureSystemFields([]) });
   const [activeTab, setActiveTab] = useState<"details" | "form" | "style">("details");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!packageId);
@@ -46,6 +47,7 @@ export function PackageEditor({ packageId, onBack, onSaved }: PackageEditorProps
       setLoading(true);
       getPackage(packageId).then((p) => {
         if (p) {
+          p.orderFormFields = ensureSystemFields(p.orderFormFields);
           setData(p);
           setPriceDisplay(formatPriceWithCommas(p.price || ""));
         }

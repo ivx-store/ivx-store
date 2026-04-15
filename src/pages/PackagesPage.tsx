@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { PageHero } from "../components/PageHero";
 import { PageLayout } from "../components/PageLayout";
 import { OrderModal } from "../components/OrderModal";
-import { CheckCircle2, Sparkles, ArrowLeft } from "lucide-react";
+import { CheckCircle2, Sparkles, ArrowLeft, Heart } from "lucide-react";
 import { PackageData, getPackages, formatDisplayPrice } from "../lib/firebase";
 
 export function PackagesPage() {
@@ -11,6 +11,18 @@ export function PackagesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageData | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("ivx_fav_packages") || "[]"); } catch { return []; }
+  });
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem("ivx_fav_packages", JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     getPackages().then((data) => {
@@ -98,6 +110,14 @@ export function PackagesPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Heart / Favorite */}
+                    <button
+                      onClick={(e) => toggleFavorite(pkg.id!, e)}
+                      className={`absolute top-4 left-4 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(pkg.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/40 backdrop-blur-sm text-white/50 hover:text-red-400 hover:bg-black/60 border border-white/10'}`}
+                    >
+                      <Heart size={16} className={`transition-transform duration-300 ${favorites.includes(pkg.id!) ? 'fill-current animate-[heartPulse_0.3s_ease]' : ''}`} />
+                    </button>
 
                     <div className="p-6 md:p-10">
                       {/* Header */}

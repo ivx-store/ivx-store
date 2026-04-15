@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Heart } from "lucide-react";
 import { OrderModal } from "./OrderModal";
 import { ServiceData, getServices, formatDisplayPrice } from "../lib/firebase";
 
@@ -10,6 +10,18 @@ export function OurServices() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("ivx_fav_services") || "[]"); } catch { return []; }
+  });
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem("ivx_fav_services", JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     getServices()
@@ -93,6 +105,13 @@ export function OurServices() {
                       </span>
                     </div>
                   )}
+                  {/* Heart / Favorite */}
+                  <button
+                    onClick={(e) => toggleFavorite(service.id!, e)}
+                    className={`absolute top-2 left-2 md:top-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
+                  >
+                    <Heart size={14} className={`md:w-4 md:h-4 transition-transform duration-300 ${favorites.includes(service.id!) ? 'fill-current animate-[heartPulse_0.3s_ease]' : ''}`} />
+                  </button>
                   {service.imageUrl ? (
                     <img
                       src={service.imageUrl}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ClipboardList, Loader2, Clock, CheckCircle2, XCircle, RefreshCw, User, Phone, FileText, Package, ChevronDown, Trash2 } from "lucide-react";
+import { ClipboardList, Loader2, Clock, CheckCircle2, XCircle, RefreshCw, User, Phone, FileText, Package, ChevronDown, Trash2, X, Mail, AtSign } from "lucide-react";
 import { OrderData, getOrders, updateOrderStatus, deleteOrder } from "../../lib/firebase";
 
 interface AdminOrdersProps {
@@ -19,14 +19,160 @@ const ITEM_TYPE_LABELS: Record<string, string> = {
   offer: "عرض",
 };
 
+function OrderDetailModal({ order, onClose, onStatusChange, onDelete }: {
+  order: OrderData;
+  onClose: () => void;
+  onStatusChange: (orderId: string, status: OrderData["status"]) => void;
+  onDelete: (orderId: string) => void;
+}) {
+  const status = STATUS_CONFIG[order.status];
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "—";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat("ar-IQ", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }).format(date);
+  };
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-detail-modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: "right" }}>
+        {/* Header */}
+        <div className="admin-detail-modal-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div className="admin-detail-modal-status" style={{ background: status.bg, color: status.color }}>
+              {status.icon}
+              {status.label}
+            </div>
+            <span className="admin-order-type-badge" style={{ fontSize: "0.75rem" }}>
+              {ITEM_TYPE_LABELS[order.itemType] || order.itemType}
+            </span>
+          </div>
+          <button onClick={onClose} className="admin-detail-modal-close">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Title */}
+        <div className="admin-detail-modal-title">
+          <Package size={20} />
+          <span>{order.itemTitle}</span>
+        </div>
+
+        {/* Info Grid */}
+        <div className="admin-detail-modal-grid">
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><User size={13} /> اسم العميل</div>
+            <div className="admin-detail-modal-info-value">{order.customerName || "—"}</div>
+          </div>
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><Phone size={13} /> رقم الجوال</div>
+            <div className="admin-detail-modal-info-value" dir="ltr" style={{ textAlign: "left" }}>{order.customerPhone || "—"}</div>
+          </div>
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><Clock size={13} /> تاريخ الطلب</div>
+            <div className="admin-detail-modal-info-value">{formatDate(order.createdAt)}</div>
+          </div>
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><AtSign size={13} /> إيميل التسجيل</div>
+            <div className="admin-detail-modal-info-value" dir="ltr" style={{ textAlign: "left" }}>{order.userRegisteredEmail || "—"}</div>
+          </div>
+        </div>
+
+        {/* Email entered in form (from custom fields) */}
+        {order.customFields && Object.entries(order.customFields).some(([k]) => k.toLowerCase().includes("email") || k.toLowerCase().includes("إيميل") || k.toLowerCase().includes("بريد")) && (
+          <div className="admin-detail-modal-section">
+            <div className="admin-detail-modal-info-label" style={{ marginBottom: "0.35rem" }}><Mail size={13} /> الإيميل المُدخل في النموذج</div>
+            {Object.entries(order.customFields).filter(([k]) => k.toLowerCase().includes("email") || k.toLowerCase().includes("إيميل") || k.toLowerCase().includes("بريد")).map(([k, v]) => (
+              <div key={k} className="admin-detail-modal-info-value" dir="ltr" style={{ textAlign: "left" }}>{String(v)}</div>
+            ))}
+          </div>
+        )}
+
+        {/* Notes */}
+        {order.customerNotes && (
+          <div className="admin-detail-modal-section">
+            <div className="admin-detail-modal-info-label" style={{ marginBottom: "0.35rem" }}><FileText size={13} /> ملاحظات العميل</div>
+            <div className="admin-detail-modal-notes">{order.customerNotes}</div>
+          </div>
+        )}
+
+        {/* Custom Fields */}
+        {order.customFields && Object.keys(order.customFields).length > 0 && (
+          <div className="admin-detail-modal-section">
+            <div className="admin-detail-modal-info-label" style={{ marginBottom: "0.5rem" }}>📋 الحقول المخصصة</div>
+            <div className="admin-detail-modal-fields">
+              {Object.entries(order.customFields).map(([key, value]) => (
+                <div key={key} className="admin-detail-modal-field">
+                  <span className="admin-detail-modal-field-key">{key}</span>
+                  <span className="admin-detail-modal-field-value">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="admin-detail-modal-actions">
+          <div className="admin-order-status-select" style={{ flex: 1 }}>
+            <select
+              value={order.status}
+              onChange={(e) => onStatusChange(order.id!, e.target.value as OrderData["status"])}
+              style={{ borderColor: status.color + "40", width: "100%" }}
+            >
+              <option value="pending">قيد الانتظار</option>
+              <option value="processing">قيد المعالجة</option>
+              <option value="completed">مكتمل</option>
+              <option value="cancelled">ملغي</option>
+            </select>
+            <ChevronDown size={14} className="admin-order-select-arrow" />
+          </div>
+          {confirmDelete ? (
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="admin-btn-secondary"
+                style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}
+                onClick={async () => {
+                  setDeleting(true);
+                  await onDelete(order.id!);
+                  setDeleting(false);
+                  onClose();
+                }}
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
+                تأكيد
+              </button>
+              <button className="admin-btn-secondary" style={{ fontSize: "0.8rem", padding: "0.5rem 1rem" }} onClick={() => setConfirmDelete(false)}>
+                إلغاء
+              </button>
+            </div>
+          ) : (
+            <button
+              className="admin-btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2 size={14} />
+              حذف
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminOrders({ onCountChange }: AdminOrdersProps) {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | OrderData["status"]>("all");
   const [toast, setToast] = useState("");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -45,7 +191,6 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderData["status"]) => {
-    setUpdatingId(orderId);
     try {
       await updateOrderStatus(orderId, newStatus);
       setToast(`✅ تم تحديث حالة الطلب إلى "${STATUS_CONFIG[newStatus].label}"`);
@@ -56,7 +201,19 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
       setToast("❌ حدث خطأ أثناء التحديث");
       setTimeout(() => setToast(""), 3000);
     }
-    setUpdatingId(null);
+  };
+
+  const handleDelete = async (orderId: string) => {
+    try {
+      await deleteOrder(orderId);
+      setToast("🗑️ تم حذف الطلب");
+      setTimeout(() => setToast(""), 3000);
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      setToast("❌ حدث خطأ أثناء الحذف");
+      setTimeout(() => setToast(""), 3000);
+    }
   };
 
   const filteredOrders = filter === "all" ? orders : orders.filter(o => o.status === filter);
@@ -65,11 +222,8 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
     if (!timestamp) return "—";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat("ar-IQ", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
     }).format(date);
   };
 
@@ -102,8 +256,7 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
             <div key={i} className="admin-order-card">
               <div className="admin-skeleton" style={{ height: "20px", width: "40%", marginBottom: "0.75rem" }} />
               <div className="admin-skeleton" style={{ height: "16px", width: "60%", marginBottom: "0.5rem" }} />
-              <div className="admin-skeleton" style={{ height: "14px", width: "30%", marginBottom: "1rem" }} />
-              <div className="admin-skeleton" style={{ height: "36px", width: "100%" }} />
+              <div className="admin-skeleton" style={{ height: "14px", width: "30%" }} />
             </div>
           ))}
         </div>
@@ -119,10 +272,14 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
         <div className="admin-orders-list">
           {filteredOrders.map((order) => {
             const status = STATUS_CONFIG[order.status];
-            const isUpdating = updatingId === order.id;
             return (
-              <div key={order.id} className="admin-order-card" style={{ borderRightColor: status.color }}>
-                {/* Header */}
+              <div
+                key={order.id}
+                className="admin-order-card admin-order-card-clickable"
+                style={{ borderRightColor: status.color }}
+                onClick={() => setSelectedOrder(order)}
+              >
+                {/* Compact Summary */}
                 <div className="admin-order-header">
                   <div className="admin-order-header-right">
                     <div className="admin-order-item-badge" style={{ background: status.bg, color: status.color }}>
@@ -135,14 +292,10 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                   </div>
                   <span className="admin-order-date">{formatDate(order.createdAt)}</span>
                 </div>
-
-                {/* Title */}
                 <div className="admin-order-title">
                   <Package size={16} />
                   {order.itemTitle}
                 </div>
-
-                {/* Customer Info */}
                 <div className="admin-order-customer">
                   <div className="admin-order-customer-item">
                     <User size={14} />
@@ -153,92 +306,20 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                     <span dir="ltr">{order.customerPhone || "—"}</span>
                   </div>
                 </div>
-
-                {/* Notes */}
-                {order.customerNotes && (
-                  <div className="admin-order-notes">
-                    <FileText size={13} />
-                    <span>{order.customerNotes}</span>
-                  </div>
-                )}
-
-                {/* Custom Fields */}
-                {order.customFields && Object.keys(order.customFields).length > 0 && (
-                  <div className="admin-order-custom-fields">
-                    {Object.entries(order.customFields).map(([key, value]) => (
-                      <div key={key} className="admin-order-custom-field">
-                        <span className="admin-order-custom-key">{key}:</span>
-                        <span className="admin-order-custom-value">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="admin-order-actions">
-                  <div className="admin-order-status-select">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id!, e.target.value as OrderData["status"])}
-                      disabled={isUpdating}
-                      style={{ borderColor: status.color + "40" }}
-                    >
-                      <option value="pending">قيد الانتظار</option>
-                      <option value="processing">قيد المعالجة</option>
-                      <option value="completed">مكتمل</option>
-                      <option value="cancelled">ملغي</option>
-                    </select>
-                    <ChevronDown size={14} className="admin-order-select-arrow" />
-                    {isUpdating && <Loader2 size={14} className="admin-order-updating" />}
-                  </div>
-                  {confirmDeleteId === order.id ? (
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <button
-                        className="admin-btn-secondary"
-                        style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}
-                        onClick={async () => {
-                          setDeletingId(order.id!);
-                          try {
-                            await deleteOrder(order.id!);
-                            setToast("🗑️ تم حذف الطلب");
-                            setTimeout(() => setToast(""), 3000);
-                            setConfirmDeleteId(null);
-                            fetchOrders();
-                          } catch (err) {
-                            console.error(err);
-                            setToast("❌ حدث خطأ أثناء الحذف");
-                            setTimeout(() => setToast(""), 3000);
-                          }
-                          setDeletingId(null);
-                        }}
-                        disabled={deletingId === order.id}
-                      >
-                        {deletingId === order.id ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
-                        تأكيد
-                      </button>
-                      <button
-                        className="admin-btn-secondary"
-                        style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem" }}
-                        onClick={() => setConfirmDeleteId(null)}
-                      >
-                        إلغاء
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="admin-btn-secondary"
-                      style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.15)" }}
-                      onClick={() => setConfirmDeleteId(order.id!)}
-                    >
-                      <Trash2 size={14} />
-                      حذف
-                    </button>
-                  )}
-                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
+        />
       )}
 
       {/* Toast */}

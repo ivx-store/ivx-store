@@ -1,5 +1,5 @@
 import React from "react";
-import { GripVertical, Trash2, Type, Mail, Hash, SlidersHorizontal, MinusCircle, PlusCircle, AlignLeft, ListOrdered } from "lucide-react";
+import { GripVertical, Trash2, Type, Mail, Hash, SlidersHorizontal, MinusCircle, PlusCircle, AlignLeft, ListOrdered, Phone } from "lucide-react";
 import { FormField, generateFieldId } from "../../lib/firebase";
 
 interface FormFieldEditorProps {
@@ -10,6 +10,7 @@ interface FormFieldEditorProps {
 const FIELD_TYPES: { value: FormField["type"]; label: string; icon: React.ReactNode }[] = [
   { value: "text", label: "نص", icon: <Type size={14} /> },
   { value: "email", label: "بريد إلكتروني", icon: <Mail size={14} /> },
+  { value: "tel", label: "رقم الجوال", icon: <Phone size={14} /> },
   { value: "number", label: "رقم", icon: <Hash size={14} /> },
   { value: "counter", label: "عداد (+/-)", icon: <PlusCircle size={14} /> },
   { value: "slider", label: "شريط تمرير", icon: <SlidersHorizontal size={14} /> },
@@ -39,7 +40,14 @@ export function FormFieldEditor({ fields, onChange }: FormFieldEditorProps) {
   };
 
   const removeField = (index: number) => {
-    onChange(fields.filter((_, i) => i !== index));
+    const field = fields[index];
+    if (field.system) {
+      const updated = [...fields];
+      updated[index] = { ...updated[index], deleted: true };
+      onChange(updated);
+    } else {
+      onChange(fields.filter((_, i) => i !== index));
+    }
   };
 
   const updateField = (index: number, updates: Partial<FormField>) => {
@@ -81,7 +89,9 @@ export function FormFieldEditor({ fields, onChange }: FormFieldEditorProps) {
       </div>
 
       <div className="admin-field-list">
-        {fields.map((field, index) => (
+        {fields.map((field, index) => {
+          if (field.deleted) return null;
+          return (
           <div
             key={field.id}
             className={`admin-field-item ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index ? "drag-over" : ""}`}
@@ -118,7 +128,7 @@ export function FormFieldEditor({ fields, onChange }: FormFieldEditorProps) {
                   {field.required ? "مطلوب" : "اختياري"}
                 </button>
                 {/* Delete */}
-                <button className="admin-btn-icon danger" onClick={() => removeField(index)} style={{ width: "1.75rem", height: "1.75rem" }}>
+                <button type="button" className="admin-btn-icon danger" onClick={() => removeField(index)} style={{ width: "1.75rem", height: "1.75rem" }}>
                   <Trash2 size={13} />
                 </button>
               </div>
@@ -220,7 +230,8 @@ export function FormFieldEditor({ fields, onChange }: FormFieldEditorProps) {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Add Field Button */}

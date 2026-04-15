@@ -2158,3 +2158,441 @@
     padding: 0.65rem 0.85rem;
   }
 }
+
+/* ============================================================
+   Admin Dashboard Grid Buttons
+   ============================================================ */
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-dashboard-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  background: var(--btn-gradient, rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  text-align: right;
+  overflow: hidden;
+  cursor: pointer !important;
+}
+
+.admin-dashboard-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.admin-dashboard-btn:hover {
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+.admin-dashboard-btn:hover::before {
+  opacity: 1;
+}
+
+.admin-dashboard-btn:active {
+  transform: translateY(-2px);
+}
+
+.admin-dashboard-btn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.admin-dashboard-btn-icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard-btn:hover .admin-dashboard-btn-icon {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(255,255,255,0.08);
+}
+
+.admin-dashboard-btn-count {
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+}
+
+.admin-dashboard-btn-label {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 0.3rem;
+  transition: color 0.3s;
+}
+
+.admin-dashboard-btn-desc {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.admin-dashboard-btn-arrow {
+  display: flex;
+  align-items: center;
+  color: #444;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard-btn:hover .admin-dashboard-btn-arrow {
+  color: #fff;
+  transform: translateX(-4px);
+}
+
+/* ============================================================
+   Admin Sub-Page Navigation
+   ============================================================ */
+
+.admin-subpage-back {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  transition: all 0.3s ease;
+  cursor: pointer !important;
+}
+
+.admin-subpage-back:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.2);
+}
+
+.admin-subpage-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   Detail Modal (Orders / Messages)
+   ============================================================ */
+
+.admin-detail-modal {
+  background: rgba(15, 15, 15, 0.98);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 1.75rem;
+  padding: 0;
+  max-width: 560px;
+  width: 94%;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: adminModalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.admin-detail-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-detail-modal::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.admin-detail-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  background: rgba(15,15,15,0.95);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.admin-detail-modal-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  background: rgba(255,255,255,0.05);
+  transition: all 0.3s;
+  cursor: pointer !important;
+}
+
+.admin-detail-modal-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.admin-detail-modal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.admin-detail-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.25rem 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.admin-detail-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .admin-detail-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-detail-modal-info {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+}
+
+.admin-detail-modal-info-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+  margin-bottom: 0.3rem;
+}
+
+.admin-detail-modal-info-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ddd;
+  word-break: break-all;
+}
+
+.admin-detail-modal-section {
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-detail-modal-notes {
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.85rem;
+  color: #bbb;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-detail-modal-message {
+  padding: 1rem 1.15rem;
+  border-radius: 0.85rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.9rem;
+  color: #ccc;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-detail-modal-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-detail-modal-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.75rem;
+}
+
+.admin-detail-modal-field-key {
+  color: #666;
+  font-weight: 700;
+}
+
+.admin-detail-modal-field-value {
+  color: #ccc;
+  font-weight: 800;
+}
+
+.admin-detail-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  bottom: 0;
+  background: rgba(15,15,15,0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Clickable order cards */
+.admin-order-card-clickable {
+  cursor: pointer !important;
+}
+
+.admin-order-card-clickable:hover {
+  border-color: rgba(255,255,255,0.15) !important;
+  background: rgba(255,255,255,0.06) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Count skeleton */
+.admin-count-skeleton {
+  display: inline-block;
+  width: 2rem;
+  height: 1.25rem;
+  border-radius: 0.35rem;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: adminSkeletonShimmer 1.5s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   Preview Form Submit Fix
+   ============================================================ */
+
+.preview-form-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin-top: 1.25rem;
+  border-radius: 0.85rem;
+  background: #fff;
+  color: #000;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: inherit;
+  border: none;
+  box-shadow: 0 4px 15px rgba(255,255,255,0.1);
+  cursor: default !important;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   Improved Dropdowns / Select
+   ============================================================ */
+
+.admin-form-select,
+.admin-order-status-select select,
+.preview-form-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.75rem;
+  padding: 0.65rem 2.5rem 0.65rem 1rem;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer !important;
+  transition: all 0.3s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.85rem center;
+}
+
+.admin-form-select:focus,
+.admin-order-status-select select:focus,
+.preview-form-field select:focus {
+  border-color: rgba(255,255,255,0.25);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.admin-form-select:hover,
+.admin-order-status-select select:hover,
+.preview-form-field select:hover {
+  border-color: rgba(255,255,255,0.18);
+}
+
+.admin-form-select option,
+.admin-order-status-select select option,
+.preview-form-field select option {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 0.5rem;
+  font-weight: 600;
+}

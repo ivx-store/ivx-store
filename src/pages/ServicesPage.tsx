@@ -1,21 +1,47 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLocation } from "react-router-dom";
 import { PageHero } from "../components/PageHero";
 import { PageLayout } from "../components/PageLayout";
 import { OrderModal } from "../components/OrderModal";
+import { ServiceDetailsModal } from "../components/ServiceDetailsModal";
 import { Filter, Loader2 } from "lucide-react";
-import { ServiceData, getServices, formatDisplayPrice } from "../lib/firebase";
+import { ServiceData, getServices, getServiceTypes, formatDisplayPrice } from "../lib/firebase";
+import { Heart } from "lucide-react";
 
 export function ServicesPage() {
+  const location = useLocation();
   const [services, setServices] = useState<ServiceData[]>([]);
+  const [adminCats, setAdminCats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(location.state?.activeTab || "all");
 
   useEffect(() => {
-    getServices().then((data) => {
+    if (location.state?.activeTab) {
+      setActiveCategory(location.state.activeTab);
+    }
+  }, [location.state?.activeTab]);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("ivx_fav_services") || "[]"); } catch { return []; }
+  });
+
+  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem("ivx_fav_services", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    Promise.all([getServices(), getServiceTypes()]).then(([data, types]) => {
       setServices(data);
+      setAdminCats(types);
       setLoading(false);
     }).catch((err) => {
       console.error("Error loading services:", err);
@@ -23,10 +49,11 @@ export function ServicesPage() {
     });
   }, []);
 
-  // Build categories dynamically from service types
+  // Build categories dynamically from admin settings
   const categories = [
     { id: "all", name: "الكل" },
-    ...Array.from(new Set(services.map((s) => s.type).filter(Boolean))).map((type) => ({
+    { id: "favorites", name: "المفضلة" },
+    ...adminCats.map((type) => ({
       id: type,
       name: type,
     })),
@@ -34,11 +61,19 @@ export function ServicesPage() {
 
   const filteredServices = activeCategory === "all"
     ? services
+    : activeCategory === "favorites"
+    ? services.filter((s) => favorites.includes(s.id!))
     : services.filter((s) => s.type === activeCategory);
 
-  const handleOrder = (service: ServiceData) => {
+  const handleOrder = (service: ServiceData, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setSelectedService(service);
     setIsModalOpen(true);
+  };
+
+  const handleDetails = (service: ServiceData) => {
+    setSelectedService(service);
+    setDetailsModalOpen(true);
   };
 
   return (
@@ -54,22 +89,31 @@ export function ServicesPage() {
         <div className="container mx-auto px-5 md:px-8">
           {/* Filter Tabs */}
           {categories.length > 1 && (
-            <div className="mb-10 md:mb-14">
-              <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+            <div className="mb-8 md:mb-14 relative w-full">
+              {/* Fade masks for elegant mobile scrolling */}
+              <div className="absolute top-0 -right-5 bottom-0 w-12 bg-gradient-to-l from-black via-black/80 to-transparent z-10 md:hidden pointer-events-none" />
+              <div className="absolute top-0 -left-5 bottom-0 w-12 bg-gradient-to-r from-black via-black/80 to-transparent z-10 md:hidden pointer-events-none" />
+              
+              <div className="flex overflow-x-auto md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 snap-x scroll-smooth pb-4 -mx-5 px-5 md:mx-0 md:px-0 md:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {categories.map((cat) => {
                   const isActive = activeCategory === cat.id;
-                  const count = cat.id === "all" ? services.length : services.filter((s) => s.type === cat.id).length;
+                  let count = 0;
+                  if (cat.id === "all") count = services.length;
+                  else if (cat.id === "favorites") count = services.filter((s) => favorites.includes(s.id!)).length;
+                  else count = services.filter((s) => s.type === cat.id).length;
+                  
                   return (
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-full font-arabic font-bold text-xs md:text-sm transition-all duration-300 border ${
+                      className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-full font-arabic font-bold text-xs md:text-sm transition-all duration-300 border ${
                         isActive
                           ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                           : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20"
                       }`}
                     >
                       {cat.id === "all" && <Filter className="w-4 h-4" />}
+                      {cat.id === "favorites" && <Heart className={`w-4 h-4 ${isActive ? 'fill-current' : ''}`} />}
                       <span>{cat.name}</span>
                       {isActive && (
                         <span className="bg-black/20 text-black text-[10px] font-black px-2 py-0.5 rounded-full">
@@ -115,7 +159,8 @@ export function ServicesPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3 }}
-                      className="bg-gray-900/40 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden hover:border-white/30 transition-all duration-500 group flex flex-col"
+                      onClick={() => handleDetails(service)}
+                      className="bg-gray-900/40 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden hover:border-white/30 transition-all duration-500 group flex flex-col cursor-pointer"
                     >
                       {/* Image */}
                       <div className="h-32 md:h-48 overflow-hidden relative">
@@ -128,6 +173,13 @@ export function ServicesPage() {
                             </span>
                           </div>
                         )}
+                        {/* Heart / Favorite */}
+                        <button
+                          onClick={(e) => toggleFavorite(service.id!, e)}
+                          className={`absolute top-2 left-2 md:top-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
+                        >
+                          <Heart size={14} className={`md:w-4 md:h-4 transition-transform duration-300 ${favorites.includes(service.id!) ? 'fill-current animate-[heartPulse_0.3s_ease]' : ''}`} />
+                        </button>
                         {service.imageUrl ? (
                           <img
                             src={service.imageUrl}
@@ -163,7 +215,7 @@ export function ServicesPage() {
                         )}
 
                         <button
-                          onClick={() => handleOrder(service)}
+                          onClick={(e) => handleOrder(service, e)}
                           className="w-full py-2 md:py-3 bg-white text-black font-arabic font-bold rounded-lg md:rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all duration-300 text-xs md:text-sm"
                         >
                           اطلب الآن
@@ -188,10 +240,22 @@ export function ServicesPage() {
 
       <OrderModal
         isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setSelectedService(null); }}
+        onClose={() => { setIsModalOpen(false); if (!detailsModalOpen) setSelectedService(null); }}
         selectedItem={selectedService?.title || ""}
         formFields={selectedService?.orderFormFields}
         itemType="service"
+      />
+
+      <ServiceDetailsModal
+        isOpen={detailsModalOpen}
+        onClose={() => { setDetailsModalOpen(false); setSelectedService(null); }}
+        service={selectedService}
+        isFavorite={selectedService ? favorites.includes(selectedService.id!) : false}
+        toggleFavorite={toggleFavorite}
+        onOrder={() => { 
+          // Open order modal for this service
+          setIsModalOpen(true);
+        }}
       />
     </PageLayout>
   );

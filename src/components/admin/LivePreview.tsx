@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Sparkles, Send, Minus, Plus, Image } from "lucide-react";
+import { CheckCircle2, Sparkles, Send, Minus, Plus, Image, User, Phone, FileText } from "lucide-react";
 import { FormField, ServiceData, PackageData, formatDisplayPrice, formatPriceWithCommas } from "../../lib/firebase";
 
 interface ServicePreviewProps {
@@ -68,19 +68,25 @@ function FormPreview({ fields, title }: { fields: FormField[]; title: string }) 
       </div>
 
       {/* Dynamic Fields */}
-      {fields.map((field) => (
+      {fields.filter(f => !f.deleted).map((field) => (
         <div className="preview-form-field" key={field.id}>
           <label>
             {field.label || "اسم الحقل"} {field.required && <span style={{ color: "#f87171" }}>*</span>}
           </label>
 
           {field.type === "text" && (
-            <input
-              type="text"
-              placeholder={field.placeholder || "أدخل النص..."}
-              value={getValue(field.id)}
-              onChange={(e) => setValue(field.id, e.target.value)}
-            />
+            <div style={{ position: "relative", width: "100%" }}>
+              <input
+                type="text"
+                placeholder={field.placeholder || "أدخل النص..."}
+                value={getValue(field.id)}
+                onChange={(e) => setValue(field.id, e.target.value)}
+                style={field.id === "customerName" ? { width: "100%", paddingRight: "2.5rem" } : { width: "100%" }}
+              />
+              {field.id === "customerName" && (
+                <User size={16} style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#555" }} />
+              )}
+            </div>
           )}
 
           {field.type === "email" && (
@@ -92,6 +98,22 @@ function FormPreview({ fields, title }: { fields: FormField[]; title: string }) 
               dir="ltr"
               style={{ textAlign: "right" }}
             />
+          )}
+
+          {field.type === "tel" && (
+            <div style={{ position: "relative", width: "100%" }}>
+              <input
+                type="tel"
+                placeholder={field.placeholder || "07X XXXX XXXX"}
+                value={getValue(field.id)}
+                onChange={(e) => setValue(field.id, e.target.value)}
+                dir="ltr"
+                style={field.id === "customerPhone" ? { width: "100%", textAlign: "right", paddingRight: "2.5rem" } : { width: "100%", textAlign: "right" }}
+              />
+              {field.id === "customerPhone" && (
+                <Phone size={16} style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#555" }} />
+              )}
+            </div>
           )}
 
           {field.type === "number" && (
@@ -158,13 +180,18 @@ function FormPreview({ fields, title }: { fields: FormField[]; title: string }) 
           })()}
 
           {field.type === "textarea" && (
-            <textarea
-              placeholder={field.placeholder || "أدخل النص..."}
-              rows={3}
-              value={getValue(field.id)}
-              onChange={(e) => setValue(field.id, e.target.value)}
-              style={{ resize: "none" }}
-            />
+            <div style={{ position: "relative", width: "100%" }}>
+              <textarea
+                placeholder={field.placeholder || "أدخل النص..."}
+                rows={3}
+                value={getValue(field.id)}
+                onChange={(e) => setValue(field.id, e.target.value)}
+                style={field.id === "customerNotes" ? { width: "100%", resize: "none", paddingRight: "2.5rem" } : { width: "100%", resize: "none" }}
+              />
+              {field.id === "customerNotes" && (
+                <FileText size={16} style={{ position: "absolute", right: "0.75rem", top: "0.85rem", color: "#555" }} />
+              )}
+            </div>
           )}
 
           {field.type === "select" && (

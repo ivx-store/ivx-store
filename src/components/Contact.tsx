@@ -3,7 +3,7 @@ import { MapPin, Phone, Mail, MessageCircle, Instagram, Twitter, Send, ArrowLeft
 
 export function Contact() {
   return (
-    <section className="py-24 relative z-10 bg-black content-auto" id="contact">
+    <section className="py-24 relative z-10 bg-black overflow-x-hidden" id="contact">
       {/* Decorative Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
-import { X, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, Zap, UserPlus, LogIn } from "lucide-react";
 import { loginAdmin, registerUser, loginWithGoogle } from "../lib/firebase";
+import { useDevicePerformance } from "../lib/useDevicePerformance";
 
 interface UserAuthModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ function GoogleIcon() {
 }
 
 export function UserAuthModal({ isOpen, onClose, onSuccess }: UserAuthModalProps) {
+  const { isLowEnd } = useDevicePerformance();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -133,7 +134,7 @@ export function UserAuthModal({ isOpen, onClose, onSuccess }: UserAuthModalProps
           onClick={(e) => { if (e.target === e.currentTarget && !isAnyLoading) onClose(); }}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+          <div className={`absolute inset-0 bg-black/80 ${isLowEnd ? '' : 'backdrop-blur-md'}`} />
 
           {/* Card */}
           <motion.div

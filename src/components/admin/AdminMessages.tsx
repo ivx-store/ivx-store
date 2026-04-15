@@ -1,9 +1,122 @@
 import { useState, useEffect } from "react";
-import { MessageCircle, Loader2, Mail, MailOpen, Phone, User, Clock, Trash2, CheckCheck } from "lucide-react";
+import { MessageCircle, Loader2, Mail, MailOpen, Phone, User, Clock, Trash2, CheckCheck, X } from "lucide-react";
 import { MessageData, getMessages, markMessageRead, deleteMessage } from "../../lib/firebase";
 
 interface AdminMessagesProps {
   onCountChange?: (count: number) => void;
+}
+
+function MessageDetailModal({ msg, onClose, onToggleRead, onDelete }: {
+  msg: MessageData;
+  onClose: () => void;
+  onToggleRead: (msg: MessageData) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "—";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return new Intl.DateTimeFormat("ar-IQ", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }).format(date);
+  };
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-detail-modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: "right" }}>
+        {/* Header */}
+        <div className="admin-detail-modal-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div className="admin-detail-modal-status" style={{
+              background: msg.read ? "rgba(85,85,85,0.1)" : "rgba(59,130,246,0.1)",
+              color: msg.read ? "#888" : "#3b82f6",
+            }}>
+              {msg.read ? <MailOpen size={14} /> : <Mail size={14} />}
+              {msg.read ? "مقروءة" : "جديدة"}
+            </div>
+          </div>
+          <button onClick={onClose} className="admin-detail-modal-close">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Sender Info Grid */}
+        <div className="admin-detail-modal-grid">
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><User size={13} /> الاسم</div>
+            <div className="admin-detail-modal-info-value">{msg.name || "—"}</div>
+          </div>
+          {msg.phone && (
+            <div className="admin-detail-modal-info">
+              <div className="admin-detail-modal-info-label"><Phone size={13} /> رقم الهاتف</div>
+              <div className="admin-detail-modal-info-value" dir="ltr" style={{ textAlign: "left" }}>{msg.phone}</div>
+            </div>
+          )}
+          {msg.email && (
+            <div className="admin-detail-modal-info">
+              <div className="admin-detail-modal-info-label"><Mail size={13} /> البريد الإلكتروني</div>
+              <div className="admin-detail-modal-info-value" dir="ltr" style={{ textAlign: "left" }}>{msg.email}</div>
+            </div>
+          )}
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><Clock size={13} /> تاريخ الإرسال</div>
+            <div className="admin-detail-modal-info-value">{formatDate(msg.createdAt)}</div>
+          </div>
+        </div>
+
+        {/* Message Body */}
+        <div className="admin-detail-modal-section">
+          <div className="admin-detail-modal-info-label" style={{ marginBottom: "0.5rem" }}><MessageCircle size={13} /> نص الرسالة</div>
+          <div className="admin-detail-modal-message">{msg.message}</div>
+        </div>
+
+        {/* Actions */}
+        <div className="admin-detail-modal-actions">
+          <button
+            className="admin-btn-secondary"
+            style={{ fontSize: "0.8rem", padding: "0.5rem 1rem" }}
+            onClick={() => { onToggleRead(msg); onClose(); }}
+          >
+            {msg.read ? <Mail size={14} /> : <CheckCheck size={14} />}
+            {msg.read ? "غير مقروءة" : "مقروءة"}
+          </button>
+          {confirmDelete ? (
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="admin-btn-secondary"
+                style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}
+                onClick={async () => {
+                  setDeleting(true);
+                  await onDelete(msg.id!);
+                  setDeleting(false);
+                  onClose();
+                }}
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
+                تأكيد
+              </button>
+              <button className="admin-btn-secondary" style={{ fontSize: "0.8rem", padding: "0.5rem 1rem" }} onClick={() => setConfirmDelete(false)}>
+                إلغاء
+              </button>
+            </div>
+          ) : (
+            <button
+              className="admin-btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2 size={14} />
+              حذف
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function AdminMessages({ onCountChange }: AdminMessagesProps) {
@@ -11,8 +124,7 @@ export function AdminMessages({ onCountChange }: AdminMessagesProps) {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [selectedMsg, setSelectedMsg] = useState<MessageData | null>(null);
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -44,30 +156,24 @@ export function AdminMessages({ onCountChange }: AdminMessagesProps) {
   };
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id);
     try {
       await deleteMessage(id);
       setToast("🗑️ تم حذف الرسالة");
       setTimeout(() => setToast(""), 3000);
-      setConfirmDelete(null);
       fetchMessages();
     } catch (err) {
       console.error(err);
       setToast("❌ حدث خطأ أثناء الحذف");
       setTimeout(() => setToast(""), 3000);
     }
-    setDeletingId(null);
   };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "—";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat("ar-IQ", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
     }).format(date);
   };
 
@@ -110,7 +216,6 @@ export function AdminMessages({ onCountChange }: AdminMessagesProps) {
             <div key={i} className="admin-order-card">
               <div className="admin-skeleton" style={{ height: "20px", width: "40%", marginBottom: "0.75rem" }} />
               <div className="admin-skeleton" style={{ height: "16px", width: "60%", marginBottom: "0.5rem" }} />
-              <div className="admin-skeleton" style={{ height: "50px", width: "100%", marginBottom: "0.5rem" }} />
               <div className="admin-skeleton" style={{ height: "14px", width: "30%" }} />
             </div>
           ))}
@@ -128,13 +233,14 @@ export function AdminMessages({ onCountChange }: AdminMessagesProps) {
           {filteredMessages.map((msg) => (
             <div
               key={msg.id}
-              className="admin-order-card"
+              className="admin-order-card admin-order-card-clickable"
               style={{
                 borderRightColor: msg.read ? "#555" : "#3b82f6",
                 opacity: msg.read ? 0.75 : 1,
               }}
+              onClick={() => setSelectedMsg(msg)}
             >
-              {/* Header */}
+              {/* Compact Summary */}
               <div className="admin-order-header">
                 <div className="admin-order-header-right">
                   <div
@@ -154,90 +260,39 @@ export function AdminMessages({ onCountChange }: AdminMessagesProps) {
                 </div>
               </div>
 
-              {/* Sender Info */}
-              <div className="admin-order-customer" style={{ marginBottom: "0.5rem" }}>
-                <div className="admin-order-customer-item">
-                  <User size={14} />
-                  <span style={{ fontWeight: 800, color: "#fff" }}>{msg.name || "—"}</span>
-                </div>
-                {msg.phone && (
-                  <div className="admin-order-customer-item">
-                    <Phone size={14} />
-                    <span dir="ltr">{msg.phone}</span>
-                  </div>
-                )}
-                {msg.email && (
-                  <div className="admin-order-customer-item">
-                    <Mail size={14} />
-                    <span dir="ltr">{msg.email}</span>
-                  </div>
-                )}
+              {/* Sender Name */}
+              <div className="admin-order-title" style={{ fontSize: "1rem" }}>
+                <User size={16} />
+                {msg.name || "—"}
               </div>
 
-              {/* Message Body */}
-              <div
-                style={{
-                  padding: "0.85rem 1rem",
-                  borderRadius: "0.75rem",
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)",
-                  fontSize: "0.85rem",
-                  color: "#ccc",
-                  lineHeight: 1.8,
-                  marginBottom: "0.75rem",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
+              {/* Message Preview */}
+              <div style={{
+                fontSize: "0.8rem",
+                color: "#777",
+                lineHeight: 1.6,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: "100%",
+              }}>
                 {msg.message}
-              </div>
-
-              {/* Actions */}
-              <div className="admin-order-actions">
-                <button
-                  className="admin-btn-secondary"
-                  style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem" }}
-                  onClick={() => handleToggleRead(msg)}
-                >
-                  {msg.read ? <Mail size={14} /> : <CheckCheck size={14} />}
-                  {msg.read ? "غير مقروءة" : "مقروءة"}
-                </button>
-                {confirmDelete === msg.id ? (
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button
-                      className="admin-btn-secondary"
-                      style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}
-                      onClick={() => handleDelete(msg.id!)}
-                      disabled={deletingId === msg.id}
-                    >
-                      {deletingId === msg.id ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={14} />}
-                      تأكيد الحذف
-                    </button>
-                    <button
-                      className="admin-btn-secondary"
-                      style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem" }}
-                      onClick={() => setConfirmDelete(null)}
-                    >
-                      إلغاء
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="admin-btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "0.4rem 0.85rem", color: "#ef4444", borderColor: "rgba(239,68,68,0.15)" }}
-                    onClick={() => setConfirmDelete(msg.id!)}
-                  >
-                    <Trash2 size={14} />
-                    حذف
-                  </button>
-                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Confirm Delete Modal */}
+      {/* Detail Modal */}
+      {selectedMsg && (
+        <MessageDetailModal
+          msg={selectedMsg}
+          onClose={() => setSelectedMsg(null)}
+          onToggleRead={handleToggleRead}
+          onDelete={handleDelete}
+        />
+      )}
+
       {/* Toast */}
       {toast && <div className="admin-toast">{toast}</div>}
     </div>
