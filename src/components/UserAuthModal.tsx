@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
+import { X, Zap, AlertCircle, Loader2, Mail, Lock, EyeOff, Eye, LogIn, UserPlus } from "lucide-react";
 import { loginAdmin, registerUser, loginWithGoogle } from "../lib/firebase";
 import { useDevicePerformance } from "../lib/useDevicePerformance";
 
