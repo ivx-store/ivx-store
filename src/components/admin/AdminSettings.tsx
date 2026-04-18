@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Save, Loader2, Globe, MessageCircle, Phone } from "lucide-react";
-import { SiteSettings, getSettings, saveSettings, getServiceTypes, saveServiceTypes } from "../../lib/firebase";
+import { Save, Loader2, Globe, MessageCircle, Phone, Monitor } from "lucide-react";
+import { SiteSettings, getSettings, saveSettings, getServiceTypes, saveServiceTypes, getPlatformTypes, savePlatformTypes } from "../../lib/firebase";
 
 interface AdminSettingsProps {
   onCountChange?: (count: number) => void;
@@ -9,15 +9,18 @@ interface AdminSettingsProps {
 export function AdminSettings({ onCountChange }: AdminSettingsProps) {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
+  const [platformTypes, setPlatformTypes] = useState<string[]>([]);
   const [newType, setNewType] = useState("");
+  const [newPlatform, setNewPlatform] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    Promise.all([getSettings(), getServiceTypes()]).then(([s, t]) => {
+    Promise.all([getSettings(), getServiceTypes(), getPlatformTypes()]).then(([s, t, p]) => {
       setSettings(s);
       setServiceTypes(t);
+      setPlatformTypes(p);
       onCountChange?.(0);
       setLoading(false);
     });
@@ -33,6 +36,7 @@ export function AdminSettings({ onCountChange }: AdminSettingsProps) {
     try {
       await saveSettings(settings);
       await saveServiceTypes(serviceTypes);
+      await savePlatformTypes(platformTypes);
       setToast("✅ تم حفظ الإعدادات بنجاح!");
       setTimeout(() => setToast(""), 3000);
     } catch (err) {
@@ -51,6 +55,16 @@ export function AdminSettings({ onCountChange }: AdminSettingsProps) {
 
   const removeServiceType = (type: string) => {
     setServiceTypes((prev) => prev.filter((t) => t !== type));
+  };
+
+  const addPlatformType = () => {
+    if (!newPlatform.trim() || platformTypes.includes(newPlatform.trim())) return;
+    setPlatformTypes((prev) => [...prev, newPlatform.trim()]);
+    setNewPlatform("");
+  };
+
+  const removePlatformType = (type: string) => {
+    setPlatformTypes((prev) => prev.filter((t) => t !== type));
   };
 
   if (loading || !settings) {
@@ -143,7 +157,7 @@ export function AdminSettings({ onCountChange }: AdminSettingsProps) {
           </div>
         </div>
 
-        {/* Service Types + Site Content */}
+        {/* Service Types + Platform Types + Site Content */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Service Types */}
           <div className="admin-editor-form" style={{ borderRadius: "1.5rem", overflow: "hidden" }}>
@@ -199,6 +213,69 @@ export function AdminSettings({ onCountChange }: AdminSettingsProps) {
                   style={{ flex: 1 }}
                 />
                 <button className="admin-btn admin-btn-secondary" onClick={addServiceType} style={{ whiteSpace: "nowrap" }}>
+                  إضافة
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Platform Types */}
+          <div className="admin-editor-form" style={{ borderRadius: "1.5rem", overflow: "hidden" }}>
+            <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <Monitor size={18} color="#06b6d4" />
+              <span style={{ fontWeight: 800, fontSize: "1rem" }}>تصنيفات المنصات</span>
+            </div>
+            <div style={{ padding: "1.5rem" }}>
+              <p style={{ color: "#666", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                أضف المنصات التي ستظهر كفلتر في صفحة الخدمات (مثل: PlayStation، Xbox، PC، Nintendo...)
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
+                {platformTypes.map((plat) => (
+                  <div
+                    key={plat}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.4rem 0.75rem",
+                      borderRadius: "0.5rem",
+                      background: "rgba(6,182,212,0.08)",
+                      border: "1px solid rgba(6,182,212,0.15)",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      color: "#67e8f9",
+                    }}
+                  >
+                    {plat}
+                    <button
+                      onClick={() => removePlatformType(plat)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#666",
+                        fontSize: "1rem",
+                        lineHeight: 1,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {platformTypes.length === 0 && (
+                  <span style={{ color: "#444", fontSize: "0.85rem" }}>لا توجد منصات بعد</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <input
+                  className="admin-form-input"
+                  value={newPlatform}
+                  onChange={(e) => setNewPlatform(e.target.value)}
+                  placeholder="مثال: PlayStation, Xbox, PC..."
+                  onKeyDown={(e) => e.key === "Enter" && addPlatformType()}
+                  style={{ flex: 1 }}
+                />
+                <button className="admin-btn admin-btn-secondary" onClick={addPlatformType} style={{ whiteSpace: "nowrap" }}>
                   إضافة
                 </button>
               </div>

@@ -83,13 +83,18 @@ export function ServiceDetailsModal({
               </div>
 
               {/* Tag overlaps the bottom left of the image */}
-              {service.type && (
-                <div className="absolute bottom-4 right-4 z-20">
+              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+                {service.type && (
                   <span className="bg-white text-black text-xs font-black px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
                     {service.type}
                   </span>
-                </div>
-              )}
+                )}
+                {service.platform && (
+                  <span className="bg-blue-500/90 backdrop-blur-sm text-white text-xs font-black px-3 py-1.5 rounded-full border border-blue-400/30 shadow-lg">
+                    {service.platform}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Scrollable Content */}

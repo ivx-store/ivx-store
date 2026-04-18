@@ -115,10 +115,17 @@ export function OurServices() {
                       </span>
                     </div>
                   )}
-                  {/* Heart / Favorite */}
+                  {service.platform && (
+                    <div className="absolute top-2 left-2 md:top-3 md:left-3 z-20">
+                      <span className="bg-blue-500/80 backdrop-blur-sm text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-md border border-blue-400/30">
+                        {service.platform}
+                      </span>
+                    </div>
+                  )}
+                  {/* Heart / Favorite — BOTTOM LEFT */}
                   <button
                     onClick={(e) => toggleFavorite(service.id!, e)}
-                    className={`absolute top-2 left-2 md:top-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
+                    className={`absolute bottom-2 left-2 md:bottom-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
                   >
                     <Heart size={14} className={`md:w-4 md:h-4 transition-transform duration-300 ${favorites.includes(service.id!) ? 'fill-current animate-[heartPulse_0.3s_ease]' : ''}`} />
                   </button>

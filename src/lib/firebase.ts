@@ -178,6 +178,7 @@ export interface ServiceData {
   price: string;
   currency: Currency;
   type: string;
+  platform?: string;
   orderFormFields: FormField[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -477,6 +478,129 @@ export async function getServiceTypes(): Promise<string[]> {
 
 export async function saveServiceTypes(types: string[]) {
   return setDoc(doc(db, "settings", "service_types"), { types });
+}
+
+// ============ Platform Types CRUD ============
+
+export async function getPlatformTypes(): Promise<string[]> {
+  const snap = await getDoc(doc(db, "settings", "platform_types"));
+  if (!snap.exists()) return [];
+  return (snap.data()?.types as string[]) || [];
+}
+
+export async function savePlatformTypes(types: string[]) {
+  return setDoc(doc(db, "settings", "platform_types"), { types });
+}
+
+// ============ Cart CRUD ============
+
+export interface CartItem {
+  id?: string;
+  serviceId: string;
+  serviceTitle: string;
+  serviceImage?: string;
+  servicePrice: number;
+  serviceCurrency: Currency;
+  serviceType?: string;
+  platform?: string;
+  quantity: number;
+  addedAt?: Timestamp;
+}
+
+export async function getCartItems(userId: string): Promise<CartItem[]> {
+  try {
+    const q = query(collection(db, "carts", userId, "items"), orderBy("addedAt", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as CartItem));
+  } catch {
+    const q = query(collection(db, "carts", userId, "items"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as CartItem));
+  }
+}
+
+export async function addToCart(userId: string, item: Omit<CartItem, "id" | "addedAt">) {
+  // Use serviceId as the document ID to avoid duplicates and eliminate read-before-write
+  const docRef = doc(db, "carts", userId, "items", item.serviceId);
+  const snap = await getDoc(docRef);
+  if (snap.exists()) {
+    const existingQty = snap.data()?.quantity || 0;
+    return updateDoc(docRef, {
+      quantity: existingQty + item.quantity,
+    });
+  }
+  // Sanitize: Firestore rejects undefined field values — replace with defaults
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (value !== undefined) {
+      sanitized[key] = value;
+    }
+  }
+  // Ensure required string fields have defaults
+  if (!sanitized.platform) sanitized.platform = "";
+  if (!sanitized.serviceType) sanitized.serviceType = "";
+  if (!sanitized.serviceImage) sanitized.serviceImage = "";
+
+  return setDoc(docRef, {
+    ...sanitized,
+    addedAt: serverTimestamp(),
+  });
+}
+
+export async function removeFromCart(userId: string, cartItemId: string) {
+  return deleteDoc(doc(db, "carts", userId, "items", cartItemId));
+}
+
+export async function updateCartItemQty(userId: string, cartItemId: string, quantity: number) {
+  return updateDoc(doc(db, "carts", userId, "items", cartItemId), { quantity });
+}
+
+export async function clearCart(userId: string) {
+  const items = await getCartItems(userId);
+  const deletes = items.map(item => {
+    if (item.id) return deleteDoc(doc(db, "carts", userId, "items", item.id));
+    return Promise.resolve();
+  });
+  await Promise.all(deletes);
+}
+
+export async function checkoutCart(userId: string, userName: string, userEmail: string) {
+  const items = await getCartItems(userId);
+  if (items.length === 0) throw new Error("Cart is empty");
+
+  const totalPrice = items.reduce((sum, item) => sum + (item.servicePrice * item.quantity), 0);
+  const currency = items[0].serviceCurrency;
+
+  const breakdown = items.map(item => ({
+    label: item.quantity > 1 ? `${item.serviceTitle} × ${item.quantity}` : item.serviceTitle,
+    value: item.servicePrice * item.quantity,
+  }));
+
+  const itemTitles = items.map(i => i.serviceTitle).join("، ");
+
+  await addOrder({
+    itemTitle: `سلة ${userName || userEmail}`,
+    itemType: "service",
+    customerName: userName,
+    customerPhone: "",
+    customerNotes: `عناصر السلة: ${itemTitles}`,
+    customFields: {
+      cartItems: items.map(i => ({
+        title: i.serviceTitle,
+        price: i.servicePrice,
+        currency: i.serviceCurrency,
+        quantity: i.quantity,
+        platform: i.platform || "",
+      })),
+    },
+    status: "pending",
+    totalPrice,
+    priceCurrency: currency,
+    pricingBreakdown: breakdown,
+  });
+
+  // Clear cart after checkout
+  await clearCart(userId);
 }
 
 // ============ Utility ============

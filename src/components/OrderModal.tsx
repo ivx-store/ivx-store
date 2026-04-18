@@ -24,16 +24,18 @@ function CustomDropdown({
   field,
   value,
   onChange,
+  baseCurrency,
 }: {
   field: FormField;
   value: string;
   onChange: (val: string) => void;
+  baseCurrency: Currency;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const options = field.options || [];
   const hasPricing = field.pricingEnabled && field.pricingMode === "options_map";
-  const currency = field.priceCurrency || "USD";
+  const currency = field.priceCurrency || baseCurrency;
   const { formatConvertedPrice } = useCurrency();
 
   useEffect(() => {
@@ -618,6 +620,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                               field={field}
                               value={getFieldValue(field.id, "")}
                               onChange={(val) => { setFieldValue(field.id, val); setValidationError(""); }}
+                              baseCurrency={baseCurrency}
                             />
                           )}
                         </div>

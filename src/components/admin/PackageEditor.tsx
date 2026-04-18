@@ -424,7 +424,7 @@ export function PackageEditor({ packageId, onBack, onSaved }: PackageEditorProps
               )}
             </div>
           ) : (
-            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} />
+            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} baseCurrency={data.currency} />
           )}
         </div>
 

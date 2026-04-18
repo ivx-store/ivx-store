@@ -391,7 +391,7 @@ export function OfferEditor({ offerId, onBack, onSaved }: OfferEditorProps) {
               </div>
             </div>
           ) : (
-            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} />
+            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} baseCurrency={data.currency} />
           )}
         </div>
 

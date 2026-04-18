@@ -5,19 +5,26 @@ import { PageHero } from "../components/PageHero";
 import { PageLayout } from "../components/PageLayout";
 import { OrderModal } from "../components/OrderModal";
 import { ServiceDetailsModal } from "../components/ServiceDetailsModal";
-import { Filter, Loader2, Search } from "lucide-react";
-import { ServiceData, getServices, getServiceTypes } from "../lib/firebase";
+import { Filter, Loader2, Search, Heart, ShoppingCart, Check, ChevronDown, Monitor } from "lucide-react";
+import { ServiceData, getServices, getServiceTypes, getPlatformTypes, addToCart } from "../lib/firebase";
 import { useCurrency } from "../lib/CurrencyContext";
-import { Heart } from "lucide-react";
+import { useAuth } from "../lib/AuthContext";
 
 export function ServicesPage() {
   const location = useLocation();
   const { formatConvertedPrice } = useCurrency();
+  const { user } = useAuth();
   const [services, setServices] = useState<ServiceData[]>([]);
   const [adminCats, setAdminCats] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>(location.state?.activeTab || "all");
+  const [activePlatform, setActivePlatform] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
+  const [addedToCart, setAddedToCart] = useState<string | null>(null);
+  const [cartLoading, setCartLoading] = useState<string | null>(null);
+  const [cartToast, setCartToast] = useState<string>("");
 
   useEffect(() => {
     if (location.state?.activeTab) {
@@ -42,9 +49,10 @@ export function ServicesPage() {
   };
 
   useEffect(() => {
-    Promise.all([getServices(), getServiceTypes()]).then(([data, types]) => {
+    Promise.all([getServices(), getServiceTypes(), getPlatformTypes()]).then(([data, types, plats]) => {
       setServices(data);
       setAdminCats(types);
+      setPlatforms(plats);
       setLoading(false);
     }).catch((err) => {
       console.error("Error loading services:", err);
@@ -62,11 +70,16 @@ export function ServicesPage() {
     })),
   ];
 
-  const filteredServices = activeCategory === "all"
+  let filteredServices = activeCategory === "all"
     ? services
     : activeCategory === "favorites"
       ? services.filter((s) => favorites.includes(s.id!))
       : services.filter((s) => s.type === activeCategory);
+
+  // Platform filter
+  if (activePlatform !== "all") {
+    filteredServices = filteredServices.filter(s => s.platform === activePlatform);
+  }
 
   const searchedServices = filteredServices.filter(s =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,6 +97,53 @@ export function ServicesPage() {
     setDetailsModalOpen(true);
   };
 
+  const showToast = (msg: string) => {
+    setCartToast(msg);
+    setTimeout(() => setCartToast(""), 3000);
+  };
+
+  const handleAddToCart = async (service: ServiceData, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      showToast("⚠️ يرجى تسجيل الدخول أولاً لإضافة المنتج للسلة");
+      return;
+    }
+    if (!service.id) return;
+    if (cartLoading) return; // prevent double-click
+    setCartLoading(service.id);
+    try {
+      await addToCart(user.uid, {
+        serviceId: service.id,
+        serviceTitle: service.title,
+        serviceImage: service.imageUrl || "",
+        servicePrice: parseFloat(service.price) || 0,
+        serviceCurrency: service.currency,
+        serviceType: service.type || "",
+        platform: service.platform || "",
+        quantity: 1,
+      });
+      setAddedToCart(service.id);
+      showToast("✅ تمت الإضافة إلى السلة");
+      setTimeout(() => setAddedToCart(null), 2000);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      showToast("❌ حدث خطأ أثناء الإضافة للسلة");
+    }
+    setCartLoading(null);
+  };
+
+  // Close platform dropdown on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.platform-dropdown-wrapper')) {
+        setShowPlatformDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   return (
     <PageLayout>
       <PageHero
@@ -95,9 +155,9 @@ export function ServicesPage() {
 
       <section className="pb-24 md:pb-32 relative z-10" dir="rtl">
         <div className="container mx-auto px-5 md:px-8">
-          {/* Search Bar */}
-          <div className="mb-6 md:mb-10 max-w-xl mx-auto">
-            <div className="relative group">
+          {/* Search Bar + Platform Filter */}
+          <div className="mb-6 md:mb-10 max-w-2xl mx-auto flex gap-3 items-stretch">
+            <div className="relative group flex-1">
               <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400 group-focus-within:text-white transition-colors" />
               </div>
@@ -109,6 +169,55 @@ export function ServicesPage() {
                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 md:py-4 pl-4 pr-12 text-white font-arabic placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 transition-all font-medium text-sm md:text-base outline-none"
               />
             </div>
+
+            {/* Platform Dropdown */}
+            {platforms.length > 0 && (
+              <div className="relative platform-dropdown-wrapper">
+                <button
+                  onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
+                  className={`h-full px-4 bg-white/5 border rounded-2xl flex items-center gap-2 text-sm font-bold font-arabic transition-all ${activePlatform !== "all"
+                      ? "border-blue-500/30 text-blue-400 bg-blue-500/5"
+                      : "border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                    }`}
+                >
+                  <Monitor size={16} />
+                  <span className="hidden sm:inline">{activePlatform === "all" ? "المنصة" : activePlatform}</span>
+                  <ChevronDown size={14} className={`transition-transform ${showPlatformDropdown ? "rotate-180" : ""}`} />
+                </button>
+
+                <AnimatePresence>
+                  {showPlatformDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full mt-2 left-0 right-0 min-w-[160px] bg-[#111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+                    >
+                      <button
+                        onClick={() => { setActivePlatform("all"); setShowPlatformDropdown(false); }}
+                        className={`w-full px-4 py-3 text-right text-sm font-bold font-arabic flex items-center justify-between transition-all ${activePlatform === "all" ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                          }`}
+                      >
+                        <span>جميع المنصات</span>
+                        {activePlatform === "all" && <Check size={14} className="text-blue-400" />}
+                      </button>
+                      {platforms.map(plat => (
+                        <button
+                          key={plat}
+                          onClick={() => { setActivePlatform(plat); setShowPlatformDropdown(false); }}
+                          className={`w-full px-4 py-3 text-right text-sm font-bold font-arabic flex items-center justify-between transition-all border-t border-white/5 ${activePlatform === plat ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                            }`}
+                        >
+                          <span>{plat}</span>
+                          {activePlatform === plat && <Check size={14} className="text-blue-400" />}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Filter Tabs */}
@@ -131,8 +240,8 @@ export function ServicesPage() {
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
                       className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-full font-arabic font-bold text-xs md:text-sm transition-all duration-300 border ${isActive
-                          ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-                          : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20"
+                        ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                        : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20"
                         }`}
                     >
                       {cat.id === "all" && <Filter className="w-4 h-4" />}
@@ -194,10 +303,18 @@ export function ServicesPage() {
                             </span>
                           </div>
                         )}
-                        {/* Heart / Favorite */}
+                        {/* Platform Badge */}
+                        {service.platform && (
+                          <div className="absolute top-2 left-2 md:top-3 md:left-3 z-20">
+                            <span className="bg-blue-500/80 backdrop-blur-sm text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-md border border-blue-400/30">
+                              {service.platform}
+                            </span>
+                          </div>
+                        )}
+                        {/* Heart / Favorite — BOTTOM LEFT */}
                         <button
                           onClick={(e) => toggleFavorite(service.id!, e)}
-                          className={`absolute top-2 left-2 md:top-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
+                          className={`absolute bottom-2 left-2 md:bottom-3 md:left-3 z-20 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${favorites.includes(service.id!) ? 'bg-red-500/90 text-white scale-110 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/50 backdrop-blur-sm text-white/60 hover:text-red-400 hover:bg-black/70 border border-white/10'}`}
                         >
                           <Heart size={14} className={`md:w-4 md:h-4 transition-transform duration-300 ${favorites.includes(service.id!) ? 'fill-current animate-[heartPulse_0.3s_ease]' : ''}`} />
                         </button>
@@ -235,12 +352,34 @@ export function ServicesPage() {
                           </div>
                         )}
 
-                        <button
-                          onClick={(e) => handleOrder(service, e)}
-                          className="w-full py-2 md:py-3 bg-white text-black font-arabic font-bold rounded-lg md:rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all duration-300 text-xs md:text-sm"
-                        >
-                          اطلب الآن
-                        </button>
+                        {/* Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => handleOrder(service, e)}
+                            className="flex-1 py-2 md:py-3 bg-white text-black font-arabic font-bold rounded-lg md:rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all duration-300 text-xs md:text-sm"
+                          >
+                            اطلب الآن
+                          </button>
+                          <button
+                            onClick={(e) => handleAddToCart(service, e)}
+                            disabled={cartLoading === service.id}
+                            className={`w-10 md:w-12 py-2 md:py-3 rounded-lg md:rounded-xl flex items-center justify-center transition-all duration-300 ${addedToCart === service.id
+                                ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400"
+                                : cartLoading === service.id
+                                  ? "bg-white/5 border border-white/10 text-gray-500"
+                                  : "bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20"
+                              }`}
+                            title="أضف للسلة"
+                          >
+                            {cartLoading === service.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : addedToCart === service.id ? (
+                              <Check size={16} />
+                            ) : (
+                              <ShoppingCart size={14} className="md:w-4 md:h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
@@ -281,6 +420,22 @@ export function ServicesPage() {
           setIsModalOpen(true);
         }}
       />
+
+      {/* Cart Toast */}
+      <AnimatePresence>
+        {cartToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 bg-[#111] border border-white/10 rounded-2xl shadow-2xl text-white text-sm font-arabic font-bold backdrop-blur-xl"
+            dir="rtl"
+          >
+            {cartToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageLayout>
   );
 }

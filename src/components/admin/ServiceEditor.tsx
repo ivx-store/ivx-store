@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRight, Save, FileText, Settings, Loader2, Plus, X } from "lucide-react";
+import { ArrowRight, Save, FileText, Settings, Loader2, Plus, X, Monitor } from "lucide-react";
 import {
   ServiceData,
   FormField,
@@ -9,6 +9,8 @@ import {
   getService,
   getServiceTypes,
   saveServiceTypes,
+  getPlatformTypes,
+  savePlatformTypes,
   formatPriceWithCommas,
   stripCommas,
   ensureSystemFields,
@@ -29,6 +31,7 @@ const defaultService: ServiceData = {
   price: "",
   currency: "USD",
   type: "",
+  platform: "",
   orderFormFields: [],
 };
 
@@ -44,12 +47,18 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
   const [showNewType, setShowNewType] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
 
+  // Platform types management
+  const [platformTypes, setPlatformTypes] = useState<string[]>([]);
+  const [showNewPlatform, setShowNewPlatform] = useState(false);
+  const [newPlatformName, setNewPlatformName] = useState("");
+
   // Price display with commas
   const [priceDisplay, setPriceDisplay] = useState("");
 
   useEffect(() => {
-    // Load service types
+    // Load service types and platform types
     getServiceTypes().then((types) => setServiceTypes(types));
+    getPlatformTypes().then((types) => setPlatformTypes(types));
 
     if (serviceId) {
       setLoading(true);
@@ -91,6 +100,20 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
       await saveServiceTypes(updatedTypes);
     } catch (e) {
       console.error("Error saving types", e);
+    }
+  };
+
+  const handleAddNewPlatform = async () => {
+    if (!newPlatformName.trim()) return;
+    const updatedPlatforms = [...platformTypes, newPlatformName.trim()];
+    setPlatformTypes(updatedPlatforms);
+    handleChange("platform", newPlatformName.trim());
+    setNewPlatformName("");
+    setShowNewPlatform(false);
+    try {
+      await savePlatformTypes(updatedPlatforms);
+    } catch (e) {
+      console.error("Error saving platforms", e);
     }
   };
 
@@ -300,9 +323,73 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
                   </div>
                 )}
               </div>
+
+              {/* Platform Dropdown */}
+              <div className="admin-form-group">
+                <label className="admin-form-label" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <Monitor size={14} color="#06b6d4" />
+                  المنصة
+                </label>
+                {!showNewPlatform ? (
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <select
+                      className="admin-form-input admin-form-select"
+                      value={data.platform || ""}
+                      onChange={(e) => {
+                        if (e.target.value === "__new__") {
+                          setShowNewPlatform(true);
+                        } else {
+                          handleChange("platform", e.target.value);
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">— بدون منصة —</option>
+                      {platformTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                      <option value="__new__">➕ إضافة منصة جديدة...</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input
+                      className="admin-form-input"
+                      value={newPlatformName}
+                      onChange={(e) => setNewPlatformName(e.target.value)}
+                      placeholder="مثال: PlayStation, Xbox, PC..."
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddNewPlatform();
+                        if (e.key === "Escape") setShowNewPlatform(false);
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      className="admin-btn admin-btn-primary"
+                      onClick={handleAddNewPlatform}
+                      style={{ padding: "0.65rem 1rem", whiteSpace: "nowrap" }}
+                    >
+                      <Plus size={16} />
+                      إضافة
+                    </button>
+                    <button
+                      className="admin-btn-icon"
+                      onClick={() => {
+                        setShowNewPlatform(false);
+                        setNewPlatformName("");
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} />
+            <FormFieldEditor fields={data.orderFormFields} onChange={handleFieldsChange} baseCurrency={data.currency} />
           )}
         </div>
 
