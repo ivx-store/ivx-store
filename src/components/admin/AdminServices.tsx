@@ -107,16 +107,17 @@ export function AdminServices({ onCountChange }: AdminServicesProps) {
           {services.map((service) => (
             <div key={service.id} className="admin-card">
               {service.type && <div className="admin-card-badge">{service.type}</div>}
-              {service.platform && (
+              {service.categoryId && (
                 <div className="admin-card-badge" style={{
-                  background: "rgba(6,182,212,0.12)",
-                  color: "#67e8f9",
-                  borderColor: "rgba(6,182,212,0.2)",
+                  background: "rgba(245,158,11,0.12)",
+                  color: "#fbbf24",
+                  borderColor: "rgba(245,158,11,0.2)",
                   position: service.type ? "absolute" : undefined,
                   top: service.type ? "3.2rem" : undefined,
                   right: service.type ? "0.75rem" : undefined,
+                  fontSize: "0.65rem",
                 }}>
-                  {service.platform}
+                  📁 قسم
                 </div>
               )}
               {service.imageUrl ? (

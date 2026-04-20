@@ -178,8 +178,19 @@ export interface ServiceData {
   price: string;
   currency: Currency;
   type: string;
-  platform?: string;
+  categoryId?: string;
   orderFormFields: FormField[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ServiceCategory {
+  id?: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  serviceType: string;
+  order: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -480,16 +491,50 @@ export async function saveServiceTypes(types: string[]) {
   return setDoc(doc(db, "settings", "service_types"), { types });
 }
 
-// ============ Platform Types CRUD ============
+// ============ Service Categories CRUD ============
 
-export async function getPlatformTypes(): Promise<string[]> {
-  const snap = await getDoc(doc(db, "settings", "platform_types"));
-  if (!snap.exists()) return [];
-  return (snap.data()?.types as string[]) || [];
+export async function getCategories(): Promise<ServiceCategory[]> {
+  const q = query(collection(db, "service_categories"), orderBy("order", "asc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceCategory));
 }
 
-export async function savePlatformTypes(types: string[]) {
-  return setDoc(doc(db, "settings", "platform_types"), { types });
+export async function getCategoriesByType(serviceType: string): Promise<ServiceCategory[]> {
+  try {
+    const q = query(collection(db, "service_categories"), where("serviceType", "==", serviceType), orderBy("order", "asc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceCategory));
+  } catch {
+    // Fallback if composite index is missing
+    const all = await getCategories();
+    return all.filter((c) => c.serviceType === serviceType);
+  }
+}
+
+export async function getCategory(id: string): Promise<ServiceCategory | null> {
+  const snap = await getDoc(doc(db, "service_categories", id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as ServiceCategory;
+}
+
+export async function addCategory(data: Omit<ServiceCategory, "id" | "createdAt" | "updatedAt">) {
+  return addDoc(collection(db, "service_categories"), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateCategory(id: string, data: Partial<ServiceCategory>) {
+  const { id: _id, createdAt, ...rest } = data as any;
+  return updateDoc(doc(db, "service_categories", id), {
+    ...rest,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteCategory(id: string) {
+  return deleteDoc(doc(db, "service_categories", id));
 }
 
 // ============ Cart CRUD ============
@@ -502,7 +547,7 @@ export interface CartItem {
   servicePrice: number;
   serviceCurrency: Currency;
   serviceType?: string;
-  platform?: string;
+  categoryId?: string;
   quantity: number;
   addedAt?: Timestamp;
 }
@@ -537,7 +582,7 @@ export async function addToCart(userId: string, item: Omit<CartItem, "id" | "add
     }
   }
   // Ensure required string fields have defaults
-  if (!sanitized.platform) sanitized.platform = "";
+  if (!sanitized.categoryId) sanitized.categoryId = "";
   if (!sanitized.serviceType) sanitized.serviceType = "";
   if (!sanitized.serviceImage) sanitized.serviceImage = "";
 
@@ -590,7 +635,6 @@ export async function checkoutCart(userId: string, userName: string, userEmail: 
         price: i.servicePrice,
         currency: i.serviceCurrency,
         quantity: i.quantity,
-        platform: i.platform || "",
       })),
     },
     status: "pending",

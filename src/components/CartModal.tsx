@@ -214,9 +214,6 @@ export function CartModal({ isOpen, onClose }: CartModalProps) {
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-bold text-white font-arabic truncate mb-1">{item.serviceTitle}</h4>
                             <div className="flex items-center gap-2 flex-wrap">
-                              {item.platform && (
-                                <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">{item.platform}</span>
-                              )}
                               {item.serviceType && (
                                 <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-md">{item.serviceType}</span>
                               )}

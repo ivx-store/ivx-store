@@ -125,7 +125,7 @@ function PriceBreakdown({
   total,
   currency,
 }: {
-  breakdown: { label: string; value: number }[];
+  breakdown: { label: string; value: number; currency: Currency }[];
   total: number;
   currency: Currency;
 }) {
@@ -147,7 +147,7 @@ function PriceBreakdown({
           <div key={i} className="order-price-breakdown-row">
             <span className="order-price-breakdown-label">{item.label}</span>
             <span className="order-price-breakdown-value">
-              {formatConvertedPrice(item.value, currency)}
+              {formatConvertedPrice(item.value, item.currency)}
             </span>
           </div>
         ))}
@@ -170,7 +170,7 @@ function PriceBreakdown({
 export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType = "service", basePrice, baseCurrency = "USD" }: OrderModalProps) {
   const { isLowEnd } = useDevicePerformance();
   const { user } = useAuth();
-  const { formatConvertedPrice } = useCurrency();
+  const { formatConvertedPrice, rates } = useCurrency();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -191,7 +191,14 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
     if (isOpen) {
       document.body.classList.add('modal-open');
       // Reset form
-      setCustomFieldValues({});
+      const initialValues: Record<string, any> = {};
+      fieldsToRender.forEach(field => {
+        if (field.pricingEnabled && field.pricingMode === "per_unit" &&
+            (field.type === "counter" || field.type === "number" || field.type === "slider")) {
+          initialValues[field.id] = Math.max(1, field.min ?? 0);
+        }
+      });
+      setCustomFieldValues(initialValues);
       setIsSuccess(false);
       setIsError(false);
       setValidationError("");
@@ -215,13 +222,21 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
 
   // Dynamic pricing calculation
   const { breakdown, total, hasPricing } = useMemo(() => {
-    const items: { label: string; value: number }[] = [];
+    const items: { label: string; value: number; currency: Currency }[] = [];
     let runningTotal = 0;
     let anyPricing = false;
 
-    // Base price
+    // Helper: convert amount from one currency to baseCurrency using rates
+    const toBaseCurrency = (amount: number, fromCurrency: Currency): number => {
+      if (fromCurrency === baseCurrency) return amount;
+      const fromRate = rates[fromCurrency] || 1;
+      const toRate = rates[baseCurrency] || 1;
+      return (amount / fromRate) * toRate;
+    };
+
+    // Base price (always in baseCurrency)
     if (basePrice && basePrice > 0) {
-      items.push({ label: selectedItem || "السعر الأساسي", value: basePrice });
+      items.push({ label: selectedItem || "السعر الأساسي", value: basePrice, currency: baseCurrency });
       runningTotal += basePrice;
       anyPricing = true;
     }
@@ -231,13 +246,14 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
       if (!field.pricingEnabled) continue;
 
       const val = customFieldValues[field.id];
+      const fieldCurrency = field.priceCurrency || baseCurrency;
 
       if (field.pricingMode === "options_map" && field.type === "select") {
         if (val && field.optionPrices?.[val] !== undefined) {
           const price = field.optionPrices[val];
           if (price > 0) {
-            items.push({ label: `${field.label}: ${val}`, value: price });
-            runningTotal += price;
+            items.push({ label: `${field.label}: ${val}`, value: price, currency: fieldCurrency });
+            runningTotal += toBaseCurrency(price, fieldCurrency);
             anyPricing = true;
           }
         }
@@ -246,22 +262,22 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
         const unitPrice = field.pricePerUnit || 0;
         if (qty > 0 && unitPrice > 0) {
           const itemTotal = qty * unitPrice;
-          items.push({ label: `${field.label}: ${qty} × ${formatPriceWithCommas(String(unitPrice))}`, value: itemTotal });
-          runningTotal += itemTotal;
+          items.push({ label: `${field.label}: ${qty} × ${formatPriceWithCommas(String(unitPrice))}`, value: itemTotal, currency: fieldCurrency });
+          runningTotal += toBaseCurrency(itemTotal, fieldCurrency);
           anyPricing = true;
         }
       } else if (field.pricingMode === "fixed") {
         const fixedP = field.fixedPrice || 0;
         if (fixedP > 0 && val) {
-          items.push({ label: field.label, value: fixedP });
-          runningTotal += fixedP;
+          items.push({ label: field.label, value: fixedP, currency: fieldCurrency });
+          runningTotal += toBaseCurrency(fixedP, fieldCurrency);
           anyPricing = true;
         }
       }
     }
 
     return { breakdown: items, total: runningTotal, hasPricing: anyPricing };
-  }, [customFieldValues, fieldsToRender, basePrice, selectedItem]);
+  }, [customFieldValues, fieldsToRender, basePrice, selectedItem, baseCurrency, rates]);
 
   const validateForm = (): boolean => {
     for (const field of fieldsToRender) {
@@ -296,7 +312,7 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
         ...(hasPricing ? {
           totalPrice: total,
           priceCurrency: baseCurrency,
-          pricingBreakdown: breakdown,
+          pricingBreakdown: breakdown.map(b => ({ label: b.label, value: b.value })),
         } : {}),
       });
       setIsSubmitting(false);
@@ -521,7 +537,8 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
                             const min = field.min ?? 0;
                             const max = field.max ?? 999;
                             const step = field.step ?? 1;
-                            const val = Number(getFieldValue(field.id, min));
+                            const defaultVal = (field.pricingEnabled && field.pricingMode === "per_unit") ? Math.max(1, min) : min;
+                            const val = Number(getFieldValue(field.id, defaultVal));
                             const hasUnitPrice = field.pricingEnabled && field.pricingMode === "per_unit" && field.pricePerUnit;
                             const unitPrice = field.pricePerUnit || 0;
                             const lineTotal = val * unitPrice;

@@ -89,11 +89,6 @@ export function ServiceDetailsModal({
                     {service.type}
                   </span>
                 )}
-                {service.platform && (
-                  <span className="bg-blue-500/90 backdrop-blur-sm text-white text-xs font-black px-3 py-1.5 rounded-full border border-blue-400/30 shadow-lg">
-                    {service.platform}
-                  </span>
-                )}
               </div>
             </div>
 

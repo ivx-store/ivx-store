@@ -20,12 +20,14 @@ import { AdminOrders } from "./components/admin/AdminOrders";
 import { AdminMessages } from "./components/admin/AdminMessages";
 import { AdminSettings } from "./components/admin/AdminSettings";
 import { AdminUsers } from "./components/admin/AdminUsers";
+import { AdminCategories } from "./components/admin/AdminCategories";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { CustomCursor } from "./components/CustomCursor";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { SeoHead } from "./components/SeoHead";
-import { LayoutGrid, Package, Flame, ClipboardList, MessageCircle, Settings, Users, AlertCircle } from "lucide-react";
+import { LayoutGrid, Package, Flame, ClipboardList, MessageCircle, Settings, Users, AlertCircle, FolderOpen } from "lucide-react";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { CategoryServicesPage } from "./pages/CategoryServicesPage";
 import { onAuthChange, updateUserPresence, updateGuestPresence, checkUserBanned, logoutAdmin, type User } from "./lib/firebase";
 import { CurrencyProvider } from "./lib/CurrencyContext";
 import { useEffect } from "react";
@@ -73,6 +75,11 @@ function AnimatedRoutes() {
             <AdminSettings />
           </AdminSubPage>
         } />
+        <Route path="/admin/categories" element={
+          <AdminSubPage title="الأقسام" icon={<FolderOpen size={22} />} iconColor="#f59e0b">
+            <AdminCategories />
+          </AdminSubPage>
+        } />
       </Routes>
     );
   }
@@ -89,6 +96,7 @@ function AnimatedRoutes() {
         <Routes location={location}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/category/:categoryId" element={<CategoryServicesPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/contact" element={<ContactPage />} />

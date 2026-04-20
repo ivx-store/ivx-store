@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Package, ExternalLink, Zap, Flame, Settings, TrendingUp, ClipboardList, LogOut, Loader2, MessageCircle, ArrowLeft, Users } from "lucide-react";
+import { LayoutGrid, Package, ExternalLink, Zap, Flame, Settings, TrendingUp, ClipboardList, LogOut, Loader2, MessageCircle, ArrowLeft, Users, FolderOpen } from "lucide-react";
 import { AdminLogin } from "../components/admin/AdminLogin";
-import { onAuthChange, logoutAdmin, getServices, getPackages, getOffers, getOrders, getMessages, getAllUsers, ADMIN_UID, formatTimestamp, type User, type OrderData } from "../lib/firebase";
+import { onAuthChange, logoutAdmin, getServices, getPackages, getOffers, getOrders, getMessages, getAllUsers, getCategories, ADMIN_UID, formatTimestamp, type User, type OrderData } from "../lib/firebase";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import "../admin.css";
 
@@ -33,6 +33,7 @@ export function AdminDashboard() {
   const [orderCnt, setOrderCnt] = useState(0);
   const [messageCnt, setMessageCnt] = useState(0);
   const [userCnt, setUserCnt] = useState(0);
+  const [categoryCnt, setCategoryCnt] = useState(0);
   const [countsLoading, setCountsLoading] = useState(true);
   const [ordersData, setOrdersData] = useState<OrderData[]>([]);
 
@@ -57,13 +58,14 @@ export function AdminDashboard() {
     const loadAllCounts = async () => {
       setCountsLoading(true);
       try {
-        const [services, packages, offers, orders, messages, usersData] = await Promise.all([
+        const [services, packages, offers, orders, messages, usersData, categoriesData] = await Promise.all([
           getServices(),
           getPackages(),
           getOffers(),
           getOrders(),
           getMessages(),
           getAllUsers(),
+          getCategories(),
         ]);
         setServiceCnt(services.length);
         setPackageCnt(packages.length);
@@ -71,6 +73,7 @@ export function AdminDashboard() {
         setOrderCnt(orders.filter(o => o.status === "pending").length);
         setMessageCnt(messages.filter(m => !m.read).length);
         setUserCnt(usersData.length);
+        setCategoryCnt(categoriesData.length);
         setOrdersData(orders);
       } catch (err) {
         console.error("Error loading counts:", err);
@@ -192,6 +195,7 @@ export function AdminDashboard() {
     { id: "packages", label: "الباقات", icon: <Package size={28} />, color: "#a855f7", gradient: "linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%)", path: "/admin/packages", count: packageCnt, loading: countsLoading, description: "إدارة الباقات المتوفرة" },
     { id: "offers", label: "العروض", icon: <Flame size={28} />, color: "#ef4444", gradient: "linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%)", path: "/admin/offers", count: offerCnt, loading: countsLoading, description: "العروض والتخفيضات" },
     { id: "users", label: "المستخدمين", icon: <Users size={28} />, color: "#06b6d4", gradient: "linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(6,182,212,0.05) 100%)", path: "/admin/users", count: userCnt, loading: countsLoading, description: "إدارة المستخدمين والزوار" },
+    { id: "categories", label: "الأقسام", icon: <FolderOpen size={28} />, color: "#f59e0b", gradient: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.05) 100%)", path: "/admin/categories", count: categoryCnt, loading: countsLoading, description: "إدارة أقسام الخدمات" },
     { id: "settings", label: "الإعدادات", icon: <Settings size={28} />, color: "#888", gradient: "linear-gradient(135deg, rgba(136,136,136,0.15) 0%, rgba(136,136,136,0.05) 100%)", path: "/admin/settings", count: -1, loading: false, description: "إعدادات الموقع العامة" },
   ];
 

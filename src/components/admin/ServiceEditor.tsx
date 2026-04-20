@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { ArrowRight, Save, FileText, Settings, Loader2, Plus, X, Monitor } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { ArrowRight, Save, FileText, Settings, Loader2, Plus, X } from "lucide-react";
 import {
   ServiceData,
+  ServiceCategory,
   FormField,
   Currency,
   addService,
@@ -9,8 +10,7 @@ import {
   getService,
   getServiceTypes,
   saveServiceTypes,
-  getPlatformTypes,
-  savePlatformTypes,
+  getCategories,
   formatPriceWithCommas,
   stripCommas,
   ensureSystemFields,
@@ -31,7 +31,7 @@ const defaultService: ServiceData = {
   price: "",
   currency: "USD",
   type: "",
-  platform: "",
+  categoryId: "",
   orderFormFields: [],
 };
 
@@ -47,18 +47,16 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
   const [showNewType, setShowNewType] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
 
-  // Platform types management
-  const [platformTypes, setPlatformTypes] = useState<string[]>([]);
-  const [showNewPlatform, setShowNewPlatform] = useState(false);
-  const [newPlatformName, setNewPlatformName] = useState("");
+  // Categories
+  const [allCategories, setAllCategories] = useState<ServiceCategory[]>([]);
 
   // Price display with commas
   const [priceDisplay, setPriceDisplay] = useState("");
 
   useEffect(() => {
-    // Load service types and platform types
+    // Load service types and categories
     getServiceTypes().then((types) => setServiceTypes(types));
-    getPlatformTypes().then((types) => setPlatformTypes(types));
+    getCategories().then((cats) => setAllCategories(cats));
 
     if (serviceId) {
       setLoading(true);
@@ -72,6 +70,44 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
       });
     }
   }, [serviceId]);
+
+  // Filter categories based on selected service type
+  const filteredCategories = data.type
+    ? allCategories.filter(c => c.serviceType === data.type)
+    : [];
+
+  // Detect if any form field has dynamic pricing enabled
+  const hasDynamicPricing = useMemo(() => {
+    return (data.orderFormFields || []).some(f => f.pricingEnabled && !f.deleted);
+  }, [data.orderFormFields]);
+
+  // Auto-calculate price from dynamic pricing fields (price for qty=1)
+  const dynamicBasePrice = useMemo(() => {
+    if (!hasDynamicPricing) return null;
+    let price = 0;
+    let currency: Currency = data.currency;
+
+    for (const field of data.orderFormFields || []) {
+      if (!field.pricingEnabled || field.deleted) continue;
+      const fieldCurrency = field.priceCurrency || data.currency;
+
+      if (field.pricingMode === "per_unit" && field.pricePerUnit) {
+        price += field.pricePerUnit;
+        currency = fieldCurrency;
+      } else if (field.pricingMode === "options_map" && field.optionPrices) {
+        const prices = (Object.values(field.optionPrices) as number[]).filter(p => p > 0);
+        if (prices.length > 0) {
+          price += Math.min(...prices);
+          currency = fieldCurrency;
+        }
+      } else if (field.pricingMode === "fixed" && field.fixedPrice) {
+        price += field.fixedPrice;
+        currency = fieldCurrency;
+      }
+    }
+
+    return price > 0 ? { price, currency } : null;
+  }, [data.orderFormFields, data.currency, hasDynamicPricing]);
 
   const handleChange = (key: keyof ServiceData, value: any) => {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -103,20 +139,6 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
     }
   };
 
-  const handleAddNewPlatform = async () => {
-    if (!newPlatformName.trim()) return;
-    const updatedPlatforms = [...platformTypes, newPlatformName.trim()];
-    setPlatformTypes(updatedPlatforms);
-    handleChange("platform", newPlatformName.trim());
-    setNewPlatformName("");
-    setShowNewPlatform(false);
-    try {
-      await savePlatformTypes(updatedPlatforms);
-    } catch (e) {
-      console.error("Error saving platforms", e);
-    }
-  };
-
   const handleSave = async () => {
     if (!data.title.trim()) {
       setToast("⚠️ يرجى إدخال عنوان الخدمة");
@@ -125,10 +147,16 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
     }
     setSaving(true);
     try {
+      const saveData = { ...data };
+      // Auto-set price from dynamic pricing when active
+      if (hasDynamicPricing && dynamicBasePrice) {
+        saveData.price = String(dynamicBasePrice.price);
+        saveData.currency = dynamicBasePrice.currency;
+      }
       if (serviceId) {
-        await updateService(serviceId, data);
+        await updateService(serviceId, saveData);
       } else {
-        await addService(data);
+        await addService(saveData);
       }
       setToast("✅ تم الحفظ بنجاح!");
       setTimeout(() => {
@@ -225,11 +253,12 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
                   <div style={{ flex: 1, position: "relative" }}>
                     <input
                       className="admin-form-input"
-                      value={priceDisplay}
+                      value={hasDynamicPricing && dynamicBasePrice ? formatPriceWithCommas(String(dynamicBasePrice.price)) : priceDisplay}
                       onChange={(e) => handlePriceChange(e.target.value)}
                       placeholder="مثال: 25,000"
                       dir="ltr"
-                      style={{ paddingLeft: "3rem" }}
+                      disabled={hasDynamicPricing}
+                      style={{ paddingLeft: "3rem", ...(hasDynamicPricing ? { opacity: 0.5, cursor: "not-allowed" } : {}) }}
                     />
                     <span
                       style={{
@@ -243,24 +272,42 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
                         pointerEvents: "none",
                       }}
                     >
-                      {data.currency === "USD" ? "$" : "د.ع"}
+                      {(hasDynamicPricing && dynamicBasePrice ? dynamicBasePrice.currency : data.currency) === "USD" ? "$" : "د.ع"}
                     </span>
                   </div>
                   <div className="admin-currency-toggle">
                     <button
                       onClick={() => handleChange("currency", "USD" as Currency)}
-                      className={`admin-currency-btn ${data.currency === "USD" ? "active" : ""}`}
+                      className={`admin-currency-btn ${(hasDynamicPricing && dynamicBasePrice ? dynamicBasePrice.currency : data.currency) === "USD" ? "active" : ""}`}
+                      disabled={hasDynamicPricing}
+                      style={hasDynamicPricing ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                     >
                       $ دولار
                     </button>
                     <button
                       onClick={() => handleChange("currency", "IQD" as Currency)}
-                      className={`admin-currency-btn ${data.currency === "IQD" ? "active" : ""}`}
+                      className={`admin-currency-btn ${(hasDynamicPricing && dynamicBasePrice ? dynamicBasePrice.currency : data.currency) === "IQD" ? "active" : ""}`}
+                      disabled={hasDynamicPricing}
+                      style={hasDynamicPricing ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                     >
                       د.ع دينار
                     </button>
                   </div>
                 </div>
+                {hasDynamicPricing && (
+                  <div style={{
+                    marginTop: "0.5rem",
+                    padding: "0.6rem 0.75rem",
+                    borderRadius: "0.6rem",
+                    background: "rgba(59, 130, 246, 0.08)",
+                    border: "1px solid rgba(59, 130, 246, 0.15)",
+                    fontSize: "0.75rem",
+                    color: "#60a5fa",
+                    fontWeight: 600,
+                  }}>
+                    💡 السعر يُحسب تلقائياً من التسعير الديناميكي في نموذج الطلب
+                  </div>
+                )}
               </div>
 
               {/* Type Dropdown */}
@@ -276,6 +323,8 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
                           setShowNewType(true);
                         } else {
                           handleChange("type", e.target.value);
+                          // Reset categoryId when type changes
+                          handleChange("categoryId", "");
                         }
                       }}
                       style={{ flex: 1 }}
@@ -324,66 +373,41 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
                 )}
               </div>
 
-              {/* Platform Dropdown */}
+              {/* Category Dropdown */}
               <div className="admin-form-group">
                 <label className="admin-form-label" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                  <Monitor size={14} color="#06b6d4" />
-                  المنصة
+                  📁 القسم
                 </label>
-                {!showNewPlatform ? (
-                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                {data.type ? (
+                  filteredCategories.length > 0 ? (
                     <select
                       className="admin-form-input admin-form-select"
-                      value={data.platform || ""}
-                      onChange={(e) => {
-                        if (e.target.value === "__new__") {
-                          setShowNewPlatform(true);
-                        } else {
-                          handleChange("platform", e.target.value);
-                        }
-                      }}
-                      style={{ flex: 1 }}
+                      value={data.categoryId || ""}
+                      onChange={(e) => handleChange("categoryId", e.target.value)}
                     >
-                      <option value="">— بدون منصة —</option>
-                      {platformTypes.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
+                      <option value="">— بدون قسم —</option>
+                      {filteredCategories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
                         </option>
                       ))}
-                      <option value="__new__">➕ إضافة منصة جديدة...</option>
                     </select>
-                  </div>
+                  ) : (
+                    <div style={{
+                      padding: "0.75rem", borderRadius: "0.75rem",
+                      background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)",
+                      fontSize: "0.8rem", color: "#f59e0b", fontWeight: 600,
+                    }}>
+                      لا توجد أقسام لنوع "{data.type}" — يمكنك إنشاء أقسام من تبويب "الأقسام" في لوحة التحكم
+                    </div>
+                  )
                 ) : (
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <input
-                      className="admin-form-input"
-                      value={newPlatformName}
-                      onChange={(e) => setNewPlatformName(e.target.value)}
-                      placeholder="مثال: PlayStation, Xbox, PC..."
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddNewPlatform();
-                        if (e.key === "Escape") setShowNewPlatform(false);
-                      }}
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      className="admin-btn admin-btn-primary"
-                      onClick={handleAddNewPlatform}
-                      style={{ padding: "0.65rem 1rem", whiteSpace: "nowrap" }}
-                    >
-                      <Plus size={16} />
-                      إضافة
-                    </button>
-                    <button
-                      className="admin-btn-icon"
-                      onClick={() => {
-                        setShowNewPlatform(false);
-                        setNewPlatformName("");
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
+                  <div style={{
+                    padding: "0.75rem", borderRadius: "0.75rem",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                    fontSize: "0.8rem", color: "#666", fontWeight: 600,
+                  }}>
+                    اختر نوع الخدمة أولاً لتظهر الأقسام المتاحة
                   </div>
                 )}
               </div>

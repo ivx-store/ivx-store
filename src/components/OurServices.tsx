@@ -115,13 +115,6 @@ export function OurServices() {
                       </span>
                     </div>
                   )}
-                  {service.platform && (
-                    <div className="absolute top-2 left-2 md:top-3 md:left-3 z-20">
-                      <span className="bg-blue-500/80 backdrop-blur-sm text-white text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-md border border-blue-400/30">
-                        {service.platform}
-                      </span>
-                    </div>
-                  )}
                   {/* Heart / Favorite — BOTTOM LEFT */}
                   <button
                     onClick={(e) => toggleFavorite(service.id!, e)}
