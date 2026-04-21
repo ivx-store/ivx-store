@@ -153,6 +153,8 @@ export function ServiceEditor({ serviceId, onBack, onSaved }: ServiceEditorProps
       if (hasDynamicPricing && dynamicBasePrice && pricingMode === "replace") {
         saveData.price = String(dynamicBasePrice.price);
         saveData.currency = dynamicBasePrice.currency;
+      } else {
+        saveData.optionPrices = null
       }
       if (serviceId) {
         await updateService(serviceId, saveData);
