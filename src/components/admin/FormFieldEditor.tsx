@@ -274,7 +274,7 @@ export function FormFieldEditor({ fields, onChange, baseCurrency = "USD" }: Form
                       }
                       updateField(index, {
                         options: cleanOptions,
-                        optionPrices: Object.keys(newOptionPrices).length > 0 ? newOptionPrices : field.optionPrices,
+                        optionPrices: Object.keys(newOptionPrices).length > 0 ? newOptionPrices : field.optionPrices === undefined ? null: field.optionPrices,
                       });
                     }}
                     placeholder={"الخيار الأول\nالخيار الثاني\nالخيار الثالث"}
