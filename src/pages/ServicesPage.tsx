@@ -282,15 +282,15 @@ export function ServicesPage() {
 
                             {/* Content overlaid on image */}
                             <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 z-20">
-                              <h3 className="text-sm md:text-xl font-arabic font-black text-white mb-1.5 group-hover:text-gray-100 transition-colors line-clamp-2 drop-shadow-lg">
+                              <h3 className="text-sm md:text-l font-arabic font-black text-white mb-1.5 group-hover:text-gray-100 transition-colors line-clamp-2 drop-shadow-lg">
                                 {cat.name}
                               </h3>
-                              {cat.description && (
+                              {/* {cat.description && (
                                 <p className="text-gray-300 font-arabic text-[10px] md:text-xs leading-relaxed line-clamp-2 mb-2 drop-shadow-md">
                                   {cat.description}
                                 </p>
-                              )}
-                              <div className="flex items-center gap-2">
+                              )} */}
+                              {/* <div className="flex items-center gap-2">
                                 <span className="bg-white/20 backdrop-blur-sm text-white text-[9px] md:text-xs font-bold px-2.5 py-1 rounded-full border border-white/10">
                                   {serviceCounts[cat.id!] || 0} خدمة
                                 </span>
@@ -298,7 +298,7 @@ export function ServicesPage() {
                                   <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform duration-300" />
                                   <span className="hidden sm:inline">استعراض</span>
                                 </span>
-                              </div>
+                              </div> */}
                             </div>
                           </div>
                         </motion.div>
