@@ -93,7 +93,7 @@ export function Hero() {
             className="flex flex-col sm:flex-row items-center justify-start gap-4 pt-6 w-full"
           >
             <motion.button 
-              onClick={() => navigate('/packages')}
+              onClick={() => navigate('/services')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="w-full sm:w-auto relative overflow-hidden group px-8 py-3 md:py-4 bg-white text-black font-bold rounded-2xl transition-all font-arabic text-base md:text-lg shadow-[0_10px_20px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3"
