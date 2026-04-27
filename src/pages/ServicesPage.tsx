@@ -9,6 +9,7 @@ import { Filter, Loader2, Search, Heart, ShoppingCart, Check, FolderOpen, ArrowL
 import { ServiceData, ServiceCategory, getServices, getServiceTypes, getCategories, addToCart } from "../lib/firebase";
 import { useCurrency } from "../lib/CurrencyContext";
 import { useAuth } from "../lib/AuthContext";
+import { useDevicePerformance } from "../lib/useDevicePerformance";
 
 export function ServicesPage() {
   const location = useLocation();
@@ -19,17 +20,15 @@ export function ServicesPage() {
   const [adminCats, setAdminCats] = useState<string[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>(location.state?.activeTab || "all");
   const [searchQuery, setSearchQuery] = useState("");
   const [addedToCart, setAddedToCart] = useState<string | null>(null);
   const [cartLoading, setCartLoading] = useState<string | null>(null);
   const [cartToast, setCartToast] = useState<string>("");
+  const { isMobile, isLowEnd } = useDevicePerformance();
+  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | null>(null);
 
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveCategory(location.state.activeTab);
-    }
-  }, [location.state?.activeTab]);
+  const searchParams = new URLSearchParams(location.search);
+  const activeCategory = searchParams.get("category") || "all";
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -152,10 +151,12 @@ export function ServicesPage() {
     setCartLoading(null);
   };
 
-  const handleCategoryClick = (catId: string) => {
-    navigate(`/services/category/${catId}`);
+  const handleCategoryClick = (cat: ServiceCategory) => {
+   
+    navigate(`/services/category/${cat.id}`);
   };
 
+console.log(selectedService , activeCategory , selectedCategory);
   return (
     <PageLayout>
       <PageHero
@@ -190,7 +191,7 @@ export function ServicesPage() {
               <div className="absolute top-0 -right-5 bottom-0 w-12 bg-gradient-to-l from-black via-black/80 to-transparent z-10 md:hidden pointer-events-none" />
               <div className="absolute top-0 -left-5 bottom-0 w-12 bg-gradient-to-r from-black via-black/80 to-transparent z-10 md:hidden pointer-events-none" />
 
-              <div className="flex overflow-x-auto md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 snap-x scroll-smooth pb-4 -mx-5 px-5 md:mx-0 md:px-0 md:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className={`flex overflow-x-auto md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 snap-x scroll-smooth pb-4 -mx-5 px-5 md:mx-0 md:px-0 md:pb-0 hide-scrollbar ${isMobile && activeCategory === 'all' ? "flex-wrap" : ""}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {tabCategories.map((cat) => {
                   const isActive = activeCategory === cat.id;
                   let count = 0;
@@ -201,7 +202,7 @@ export function ServicesPage() {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => setActiveCategory(cat.id)}
+                      onClick={() => navigate(`/services?category=${cat.id}`, { replace: true })}
                       className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-full font-arabic font-bold text-xs md:text-sm transition-all duration-300 border ${isActive
                         ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                         : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20"
@@ -258,7 +259,7 @@ export function ServicesPage() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.3, delay: idx * 0.05, ease: "easeOut" }}
-                          onClick={() => handleCategoryClick(cat.id!)}
+                          onClick={() => handleCategoryClick(cat)}
                           className="relative bg-gray-900/40 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden hover:border-white/30 transition-all duration-500 group cursor-pointer"
                         >
                           {/* Image */}
@@ -372,6 +373,7 @@ export function ServicesPage() {
           ) : (
             /* ─── Direct Services View (All / Favorites) ─── */
             <>
+            {activeCategory === "favorites" && searchedServices.length === 0  || !isMobile && <>
               <motion.div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
                 <AnimatePresence mode="sync">
                   {searchedServices.map((service) => (
@@ -421,7 +423,9 @@ export function ServicesPage() {
                   </div>
                 </motion.div>
               )}
+            </>}
             </>
+            
           )}
         </div>
       </section>
@@ -432,6 +436,8 @@ export function ServicesPage() {
         selectedItem={selectedService?.title || ""}
         formFields={selectedService?.orderFormFields}
         itemType="service"
+        service={selectedService?.type || activeCategory}
+        section={selectedService?.categoryId ? categories.find(c => c.id === selectedService.categoryId)?.name : undefined}
         basePrice={selectedService?.price ? parseFloat(selectedService.price) : undefined}
         baseCurrency={selectedService?.currency}
         dynamicPricingMode={selectedService?.dynamicPricingMode}
