@@ -108,12 +108,12 @@ export function Header() {
           )}
 
           {/* Cart Button - Desktop */}
-          <button
+          {/* <button
             onClick={() => setShowCart(true)}
             className="w-11 h-11 rounded-full bg-black/80 md:bg-black/60 backdrop-blur-md md:backdrop-blur-xl border border-white/15 flex items-center justify-center text-white hover:bg-black/90 md:hover:bg-black/80 hover:border-white/30 transition-all duration-300 shadow-lg"
           >
             <ShoppingBag size={18} />
-          </button>
+          </button> */}
         </div>
 
         {/* The Dynamic Glass Pill */}
