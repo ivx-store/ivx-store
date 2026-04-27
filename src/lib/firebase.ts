@@ -269,6 +269,8 @@ export interface OrderData {
   userId?: string;
   userEmail?: string;
   userRegisteredEmail?: string;
+  service?: string;
+  section?: string;
   totalPrice?: number;
   priceCurrency?: Currency;
   pricingBreakdown?: { label: string; value: number }[];
@@ -300,6 +302,7 @@ export async function getService(id: string): Promise<ServiceData | null> {
 }
 
 export async function addService(data: Omit<ServiceData, "id" | "createdAt" | "updatedAt">) {
+  console.log("Adding service with data:", data);
   return addDoc(collection(db, "services"), {
     ...data,
     createdAt: serverTimestamp(),
@@ -411,6 +414,7 @@ export async function getOrders(): Promise<OrderData[]> {
 
 export async function addOrder(data: Omit<OrderData, "id" | "createdAt">) {
   const currentUser = auth.currentUser;
+  console.log("Adding order with data:", data, "for user:", currentUser?.email || "Guest");
   return addDoc(collection(db, "orders"), {
     ...data,
     userId: currentUser?.uid || "",
