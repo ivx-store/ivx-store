@@ -117,7 +117,7 @@ export function CategoryServicesPage() {
           {/* Back Button + Search */}
           <div className="mb-6 md:mb-10 max-w-2xl mx-auto flex gap-3 items-stretch">
             <button
-              onClick={() => navigate("/services", { state: { activeTab: category?.serviceType || "all" } })}
+              onClick={() => navigate(`/services?category=${category?.serviceType || "all"}`)}
               className="h-auto px-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-2 text-sm font-bold font-arabic text-gray-400 hover:text-white hover:border-white/20 transition-all"
             >
               <ArrowRight size={16} />
@@ -295,6 +295,8 @@ export function CategoryServicesPage() {
         selectedItem={selectedService?.title || ""}
         formFields={selectedService?.orderFormFields}
         itemType="service"
+        service={selectedService?.type || category?.serviceType}
+        section={category?.name ?? null}
         basePrice={selectedService?.price ? parseFloat(selectedService.price) : undefined}
         baseCurrency={selectedService?.currency}
         dynamicPricingMode={selectedService?.dynamicPricingMode}
