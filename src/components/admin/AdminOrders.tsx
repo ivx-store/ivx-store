@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ClipboardList, Loader2, Clock, CheckCircle2, XCircle, RefreshCw, User, Phone, FileText, Package, ChevronDown, Trash2, X, Mail, AtSign, Download, Copy, DollarSign } from "lucide-react";
+import { ClipboardList, Loader2, Clock, CheckCircle2, XCircle, RefreshCw, User, Phone, FileText, Package, ChevronDown, Trash2, X, Mail, AtSign, Download, Copy, DollarSign, Layers, Tag } from "lucide-react";
 import { OrderData, getOrders, updateOrderStatus, deleteOrder, formatTimestamp, formatPriceWithCommas, getCurrencySymbol } from "../../lib/firebase";
 import { STATUS_CONFIG, ITEM_TYPE_LABELS } from "../../lib/constants";
 
@@ -28,6 +28,8 @@ function OrderDetailModal({ order, onClose, onStatusChange, onDelete }: {
     setTimeout(() => setCopiedText(null), 2000);
   };
 
+  console.log(order , "selected order")
+
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
       <div className="admin-detail-modal" onClick={(e) => e.stopPropagation()} style={{ textAlign: "right" }}>
@@ -40,6 +42,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, onDelete }: {
             </div>
             <span className="admin-order-type-badge" style={{ fontSize: "0.75rem" }}>
               {ITEM_TYPE_LABELS[order.itemType] || order.itemType}
+              
             </span>
           </div>
           <button onClick={onClose} className="admin-detail-modal-close">
@@ -78,6 +81,14 @@ function OrderDetailModal({ order, onClose, onStatusChange, onDelete }: {
           <div className="admin-detail-modal-info">
             <div className="admin-detail-modal-info-label"><Clock size={13} /> تاريخ الطلب</div>
             <div className="admin-detail-modal-info-value">{formatDate(order.createdAt)}</div>
+          </div>
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><Layers size={13} /> الخدمة</div>
+            <div className="admin-detail-modal-info-value">{order.service || "—"}</div>
+          </div>
+          <div className="admin-detail-modal-info">
+            <div className="admin-detail-modal-info-label"><Tag size={13} /> القسم</div>
+            <div className="admin-detail-modal-info-value">{order.section || "—"}</div>
           </div>
           <div className="admin-detail-modal-info">
             <div className="admin-detail-modal-info-label"><AtSign size={13} /> إيميل التسجيل</div>
@@ -385,6 +396,7 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                 onClick={() => setSelectedOrder(order)}
               >
                 {/* Compact Summary */}
+              
                 <div className="admin-order-header">
                   <div className="admin-order-header-right">
                     <div className="admin-order-item-badge" style={{ background: status.bg, color: status.color }}>
@@ -397,7 +409,7 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                   </div>
                   <span className="admin-order-date">{formatDate(order.createdAt)}</span>
                 </div>
-                <div className="admin-order-title">
+                <div className="admin-order-title ">
                   <Package size={16} />
                   {order.itemTitle}
                   {order.totalPrice !== undefined && order.totalPrice > 0 && (
@@ -405,6 +417,8 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                       {formatPriceWithCommas(String(order.totalPrice))} {getCurrencySymbol(order.priceCurrency || "USD")}
                     </span>
                   )}
+
+                  
                 </div>
                 <div className="admin-order-customer">
                   <div className="admin-order-customer-item">
@@ -415,7 +429,16 @@ export function AdminOrders({ onCountChange }: AdminOrdersProps) {
                     <Phone size={14} />
                     <span dir="ltr">{order.customerPhone || "—"}</span>
                   </div>
+                  {order.service && (
+                    <div className="admin-order-customer-item">
+                      <Layers size={14} />
+                      <span>{order.service}{order.section ? ` / ${order.section}` : ""}</span>
+                    </div>
+                  )}
                 </div>
+                   <span className="admin-order-type-badge ">
+                     {order.id}
+                </span>
               </div>
             );
           })}
