@@ -16,6 +16,8 @@ interface OrderModalProps {
   formFields?: FormField[];
   itemType?: "service" | "package" | "offer";
   basePrice?: number;
+  section?: string | null;
+  service?: string | null;
   baseCurrency?: Currency;
   dynamicPricingMode?: "replace" | "addon";
 }
@@ -168,7 +170,7 @@ function PriceBreakdown({
   );
 }
 
-export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType = "service", basePrice, baseCurrency = "USD", dynamicPricingMode = "replace" }: OrderModalProps) {
+export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType = "service", basePrice, baseCurrency = "USD", dynamicPricingMode = "replace" , service = null , section = null }: OrderModalProps) {
   const { isLowEnd } = useDevicePerformance();
   const { user } = useAuth();
   const { formatConvertedPrice, rates } = useCurrency();
@@ -179,6 +181,8 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
   const [mounted, setMounted] = useState(false);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const [validationError, setValidationError] = useState("");
+
+  console.log("OrderModal render", { isOpen, selectedItem, formFields, itemType, basePrice, baseCurrency, dynamicPricingMode, service, section });
 
   const fieldsToRender = React.useMemo(() => ensureSystemFields(formFields || []).filter(f => !f.deleted), [formFields]);
 
@@ -313,6 +317,8 @@ export function OrderModal({ isOpen, onClose, selectedItem, formFields, itemType
       await addOrder({
         itemTitle: selectedItem,
         itemType,
+        service,
+        section,
         customerName: customFieldValues["customerName"] || "",
         customerPhone: customFieldValues["customerPhone"] || "",
         customerNotes: customFieldValues["customerNotes"] || "",
