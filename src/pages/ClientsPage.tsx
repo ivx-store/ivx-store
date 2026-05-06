@@ -1,89 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PageHero } from "../components/PageHero";
 import { PageLayout } from "../components/PageLayout";
 import { Quote, Star, ChevronDown, HelpCircle } from "lucide-react";
+import { getActiveTestimonials, getActiveFAQs, type TestimonialData, type FAQData } from "../lib/firebase";
 
-const testimonials = [
-  {
-    id: 1,
-    name: "أحمد محمد",
-    role: "لاعب محترف",
-    content: "متجر ivx هو الأفضل بلا منازع! أسعار الاشتراكات ممتازة والتسليم فوري. أنصح كل جيمر بالتعامل معهم.",
-    image: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 5,
-  },
-  {
-    id: 2,
-    name: "سارة خالد",
-    role: "صانعة محتوى",
-    content: "أفضل متجر تعاملت معاه، حسابات مضمونة وخدمة عملاء سريعة ومتعاونة جداً. شكراً ivx!",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-    rating: 5,
-  },
-  {
-    id: 3,
-    name: "فهد العتيبي",
-    role: "صاحب متجر ألعاب",
-    content: "نتعامل مع ivx بالجملة منذ فترة، أسعارهم لا تقبل المنافسة والمصداقية عالية جداً. شركاء نجاح حقيقيين.",
-    image: "https://randomuser.me/api/portraits/men/46.jpg",
-    rating: 5,
-  },
-  {
-    id: 4,
-    name: "نورة السعد",
-    role: "لاعبة",
-    content: "تجربة شراء رائعة، حصلت على اللعبة اللي أبيها بسعر خيالي وفي ثواني. متجر موثوق 100%.",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    rating: 5,
-  },
-  {
-    id: 5,
-    name: "عبدالله الراجحي",
-    role: "ستريمر",
-    content: "دايماً أشحن رصيدي من عندهم، سرعة وأمان وأسعار تنافسية. أفضل متجر في العراق بدون شك.",
-    image: "https://randomuser.me/api/portraits/men/75.jpg",
-    rating: 5,
-  },
-  {
-    id: 6,
-    name: "مريم حسين",
-    role: "لاعبة كاجوال",
-    content: "أول مرة أشتري أونلاين وكنت خايفة، بس تجربتي مع ivx كانت ممتازة. الحساب وصلني بدقائق والدعم الفني ساعدني بكل شي.",
-    image: "https://randomuser.me/api/portraits/women/22.jpg",
-    rating: 5,
-  },
+const fallbackTestimonials: TestimonialData[] = [
+  { name: "أحمد محمد", role: "لاعب محترف", content: "متجر ivx هو الأفضل بلا منازع! أسعار الاشتراكات ممتازة والتسليم فوري.", imageUrl: "https://randomuser.me/api/portraits/men/32.jpg", rating: 5, order: 1, active: true },
+  { name: "سارة خالد", role: "صانعة محتوى", content: "أفضل متجر تعاملت معاه، حسابات مضمونة وخدمة عملاء سريعة ومتعاونة جداً.", imageUrl: "https://randomuser.me/api/portraits/women/44.jpg", rating: 5, order: 2, active: true },
+  { name: "فهد العتيبي", role: "صاحب متجر ألعاب", content: "نتعامل مع ivx بالجملة منذ فترة، أسعارهم لا تقبل المنافسة والمصداقية عالية جداً.", imageUrl: "https://randomuser.me/api/portraits/men/46.jpg", rating: 5, order: 3, active: true },
+  { name: "نورة السعد", role: "لاعبة", content: "تجربة شراء رائعة، حصلت على اللعبة اللي أبيها بسعر خيالي وفي ثواني. متجر موثوق 100%.", imageUrl: "https://randomuser.me/api/portraits/women/68.jpg", rating: 5, order: 4, active: true },
+  { name: "عبدالله الراجحي", role: "ستريمر", content: "دايماً أشحن رصيدي من عندهم، سرعة وأمان وأسعار تنافسية.", imageUrl: "https://randomuser.me/api/portraits/men/75.jpg", rating: 5, order: 5, active: true },
+  { name: "مريم حسين", role: "لاعبة كاجوال", content: "أول مرة أشتري أونلاين وكنت خايفة، بس تجربتي مع ivx كانت ممتازة. الحساب وصلني بدقائق.", imageUrl: "https://randomuser.me/api/portraits/women/22.jpg", rating: 5, order: 6, active: true },
 ];
 
-const faqs = [
-  {
-    question: "كيف أستلم طلبي بعد الدفع؟",
-    answer: "بعد إتمام عملية الدفع بنجاح، سيتم إرسال تفاصيل طلبك (سواء كان حساب، اشتراك، أو كود لعبة) مباشرة إلى بريدك الإلكتروني المسجل، أو عبر رسالة نصية/واتساب حسب وسيلة التواصل التي اخترتها.",
-  },
-  {
-    question: "هل الحسابات والاشتراكات مضمونة؟",
-    answer: "نعم، جميع منتجاتنا مضمونة 100%. نحن نتعامل مع مصادر موثوقة ونقدم ضماناً كاملاً على جميع الاشتراكات والحسابات طوال فترة الصلاحية المحددة.",
-  },
-  {
-    question: "ما هي طرق الدفع المتاحة؟",
-    answer: "نوفر طرق دفع متعددة وآمنة تناسب الجميع في العراق، بما في ذلك ماستر كارد، زين كاش، آسيا حوالة، والبطاقات البنكية المعتمدة.",
-  },
-  {
-    question: "هل يمكنني استرجاع المبلغ إذا واجهت مشكلة؟",
-    answer: "بشكل عام، لا يمكن استرداد المبلغ بعد استلام الطلب. ولكن في حال مواجهة أي مشكلة، يرجى التواصل معنا؛ وسنقوم بدراسة الحالة لمعرفة نوع المشكلة، وبناءً عليها نقرر الإجراء الأنسب.",
-  },
-  {
-    question: "هل تبيعون بالجملة لأصحاب المتاجر؟",
-    answer: "نعم، بكل تأكيد! نحن نوفر أسعاراً خاصة ومنافسة جداً لطلبات الجملة المخصصة لأصحاب المتاجر وسناتر الألعاب. يمكنك التواصل مع فريق الدعم للحصول على قائمة أسعار الجملة.",
-  },
-  {
-    question: "متى تكون خدمة العملاء متاحة؟",
-    answer: "فريق خدمة العملاء لدينا متواجد لخدمتكم يومياً خلال ساعات العمل الرسمية: من الساعة 12:00 ظهراً (12 PM) وحتى الساعة 12:00 منتصف الليل (12 AM).",
-  },
+const fallbackFaqs: FAQData[] = [
+  { question: "كيف أستلم طلبي بعد الدفع؟", answer: "بعد إتمام عملية الدفع بنجاح، سيتم إرسال تفاصيل طلبك مباشرة إلى بريدك الإلكتروني المسجل.", order: 1, active: true },
+  { question: "هل الحسابات والاشتراكات مضمونة؟", answer: "نعم، جميع منتجاتنا مضمونة 100%.", order: 2, active: true },
+  { question: "ما هي طرق الدفع المتاحة؟", answer: "نوفر طرق دفع متعددة وآمنة تناسب الجميع في العراق.", order: 3, active: true },
+  { question: "هل يمكنني استرجاع المبلغ إذا واجهت مشكلة؟", answer: "بشكل عام، لا يمكن استرداد المبلغ بعد استلام الطلب. ولكن في حال مواجهة أي مشكلة، يرجى التواصل معنا.", order: 4, active: true },
+  { question: "هل تبيعون بالجملة لأصحاب المتاجر؟", answer: "نعم، بكل تأكيد! نحن نوفر أسعاراً خاصة ومنافسة جداً لطلبات الجملة.", order: 5, active: true },
+  { question: "متى تكون خدمة العملاء متاحة؟", answer: "فريق خدمة العملاء متواجد يومياً من 12:00 ظهراً وحتى 12:00 منتصف الليل.", order: 6, active: true },
 ];
 
 export function ClientsPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [testimonials, setTestimonials] = useState<TestimonialData[]>(fallbackTestimonials);
+  const [faqs, setFaqs] = useState<FAQData[]>(fallbackFaqs);
+
+  useEffect(() => {
+    getActiveTestimonials().then(data => { if (data.length > 0) setTestimonials(data); }).catch(() => {});
+    getActiveFAQs().then(data => { if (data.length > 0) setFaqs(data); }).catch(() => {});
+  }, []);
 
   return (
     <PageLayout>
@@ -100,35 +48,30 @@ export function ClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 max-w-6xl mx-auto">
             {testimonials.map((item, idx) => (
               <motion.div
-                key={item.id}
+                key={item.id || idx}
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.08 }}
                 className="relative bg-gray-900/40 rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/5 hover:border-white/20 hover:shadow-[0_20px_60px_rgba(255,255,255,0.04)] transition-all duration-500 group overflow-hidden flex flex-col"
               >
-                {/* Watermark Quote */}
                 <Quote className="absolute top-4 left-4 w-12 h-12 md:w-16 md:h-16 text-white/[0.03] group-hover:text-white/[0.06] transition-all duration-500 rotate-180 pointer-events-none" />
 
                 <div className="relative z-10 flex-grow">
-                  {/* Stars */}
                   <div className="flex gap-1 mb-4">
                     {[...Array(item.rating)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
-
-                  {/* Content */}
                   <p className="text-gray-300 font-arabic text-sm md:text-base leading-relaxed mb-6 font-medium">
                     "{item.content}"
                   </p>
                 </div>
 
-                {/* Author */}
                 <div className="flex items-center gap-3 pt-5 border-t border-white/5 relative z-10">
                   <div className="relative">
                     <img
-                      src={item.image}
+                      src={item.imageUrl}
                       alt={item.name}
                       className="w-11 h-11 md:w-14 md:h-14 rounded-full object-cover border-2 border-black"
                       referrerPolicy="no-referrer"
@@ -150,7 +93,6 @@ export function ClientsPage() {
       {/* FAQ Section */}
       <section className="pb-24 md:pb-32 relative z-10" dir="rtl">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
-          {/* FAQ Header */}
           <div className="text-center mb-10 md:mb-16">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -183,13 +125,12 @@ export function ClientsPage() {
             </motion.p>
           </div>
 
-          {/* FAQ Items */}
           <div className="flex flex-col gap-4">
             {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
                 <motion.div
-                  key={index}
+                  key={faq.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}

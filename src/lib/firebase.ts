@@ -702,6 +702,107 @@ export function formatDisplayPrice(price: string, currency: Currency): string {
   return currency === "USD" ? `$${formatted}` : `${formatted} د.ع`;
 }
 
+// ============ Testimonials CRUD ============
+
+export interface TestimonialData {
+  id?: string;
+  name: string;
+  role: string;
+  content: string;
+  imageUrl: string;
+  rating: number;
+  order: number;
+  active: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export async function getTestimonials(): Promise<TestimonialData[]> {
+  const q = query(collection(db, "testimonials"), orderBy("order", "asc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TestimonialData));
+}
+
+export async function getActiveTestimonials(): Promise<TestimonialData[]> {
+  try {
+    const q = query(collection(db, "testimonials"), where("active", "==", true), orderBy("order", "asc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TestimonialData));
+  } catch {
+    const all = await getTestimonials();
+    return all.filter((t) => t.active);
+  }
+}
+
+export async function addTestimonial(data: Omit<TestimonialData, "id" | "createdAt" | "updatedAt">) {
+  return addDoc(collection(db, "testimonials"), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateTestimonial(id: string, data: Partial<TestimonialData>) {
+  const { id: _id, createdAt, ...rest } = data as any;
+  return updateDoc(doc(db, "testimonials", id), {
+    ...rest,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteTestimonial(id: string) {
+  return deleteDoc(doc(db, "testimonials", id));
+}
+
+// ============ FAQs CRUD ============
+
+export interface FAQData {
+  id?: string;
+  question: string;
+  answer: string;
+  order: number;
+  active: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export async function getFAQs(): Promise<FAQData[]> {
+  const q = query(collection(db, "faqs"), orderBy("order", "asc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FAQData));
+}
+
+export async function getActiveFAQs(): Promise<FAQData[]> {
+  try {
+    const q = query(collection(db, "faqs"), where("active", "==", true), orderBy("order", "asc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FAQData));
+  } catch {
+    const all = await getFAQs();
+    return all.filter((f) => f.active);
+  }
+}
+
+export async function addFAQ(data: Omit<FAQData, "id" | "createdAt" | "updatedAt">) {
+  return addDoc(collection(db, "faqs"), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateFAQ(id: string, data: Partial<FAQData>) {
+  const { id: _id, createdAt, ...rest } = data as any;
+  return updateDoc(doc(db, "faqs", id), {
+    ...rest,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function deleteFAQ(id: string) {
+  return deleteDoc(doc(db, "faqs", id));
+}
+
 // ============ Color Presets ============
 
 export const PACKAGE_COLOR_PRESETS = [

@@ -509,7 +509,7 @@ function ServiceCard({
       className="bg-gray-900/40 border border-white/10 rounded-2xl md:rounded-3xl overflow-hidden hover:border-white/30 transition-all duration-500 group flex flex-col cursor-pointer"
     >
       {/* Image */}
-      <div className="relative overflow-hidden md:h-48 bg-gradient-to-br from-gray-900/80 via-[#0d0d0d] to-black">
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-900/80 via-[#0d0d0d] to-black flex items-center justify-center">
         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500 z-10" />
         {/* Tag */}
         {service.type && (
@@ -530,13 +530,13 @@ function ServiceCard({
           <img
             src={service.imageUrl}
             alt={service.title}
-            className="w-full h-auto md:h-full md:w-full object-scale-down md:object-cover transition-transform duration-700 group-hover:scale-105 md:group-hover:scale-110 max-h-[180px] md:max-h-none"
+            className="w-full h-auto block transition-transform duration-700 group-hover:scale-105"
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-800/50 to-gray-900/50 flex items-center justify-center">
+          <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-800/50 to-gray-900/50 flex items-center justify-center">
             <span className="text-4xl">🎮</span>
           </div>
         )}

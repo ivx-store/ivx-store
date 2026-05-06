@@ -1,51 +1,25 @@
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Quote, Star } from "lucide-react";
+import { getActiveTestimonials, type TestimonialData } from "../lib/firebase";
 
-const testimonials = [
-  {
-    id: 1,
-    name: "أحمد محمد",
-    role: "لاعب محترف",
-    content: "متجر ivx هو الأفضل بلا منازع! أسعار الاشتراكات ممتازة والتسليم فوري. أنصح كل جيمر بالتعامل معهم.",
-    image: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 5
-  },
-  {
-    id: 2,
-    name: "سارة خالد",
-    role: "صانعة محتوى",
-    content: "أفضل متجر تعاملت معاه، حسابات مضمونة وخدمة عملاء سريعة ومتعاونة جداً. شكراً ivx!",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-    rating: 5
-  },
-  {
-    id: 3,
-    name: "فهد العتيبي",
-    role: "صاحب متجر ألعاب",
-    content: "نتعامل مع ivx بالجملة منذ فترة، أسعارهم لا تقبل المنافسة والمصداقية عالية جداً. شركاء نجاح حقيقيين.",
-    image: "https://randomuser.me/api/portraits/men/46.jpg",
-    rating: 5
-  },
-  {
-    id: 4,
-    name: "نورة السعد",
-    role: "لاعبة",
-    content: "تجربة شراء رائعة، حصلت على اللعبة اللي أبيها بسعر خيالي وفي ثواني. متجر موثوق 100%.",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    rating: 5
-  },
-  {
-    id: 5,
-    name: "عبدالله الراجحي",
-    role: "ستريمر",
-    content: "دايماً أشحن رصيدي من عندهم، سرعة وأمان وأسعار تنافسية. أفضل متجر في العراق بدون شك.",
-    image: "https://randomuser.me/api/portraits/men/75.jpg",
-    rating: 5
-  }
+const fallbackTestimonials: TestimonialData[] = [
+  { name: "أحمد محمد", role: "لاعب محترف", content: "متجر ivx هو الأفضل بلا منازع! أسعار الاشتراكات ممتازة والتسليم فوري. أنصح كل جيمر بالتعامل معهم.", imageUrl: "https://randomuser.me/api/portraits/men/32.jpg", rating: 5, order: 1, active: true },
+  { name: "سارة خالد", role: "صانعة محتوى", content: "أفضل متجر تعاملت معاه، حسابات مضمونة وخدمة عملاء سريعة ومتعاونة جداً. شكراً ivx!", imageUrl: "https://randomuser.me/api/portraits/women/44.jpg", rating: 5, order: 2, active: true },
+  { name: "فهد العتيبي", role: "صاحب متجر ألعاب", content: "نتعامل مع ivx بالجملة منذ فترة، أسعارهم لا تقبل المنافسة والمصداقية عالية جداً. شركاء نجاح حقيقيين.", imageUrl: "https://randomuser.me/api/portraits/men/46.jpg", rating: 5, order: 3, active: true },
+  { name: "نورة السعد", role: "لاعبة", content: "تجربة شراء رائعة، حصلت على اللعبة اللي أبيها بسعر خيالي وفي ثواني. متجر موثوق 100%.", imageUrl: "https://randomuser.me/api/portraits/women/68.jpg", rating: 5, order: 4, active: true },
+  { name: "عبدالله الراجحي", role: "ستريمر", content: "دايماً أشحن رصيدي من عندهم، سرعة وأمان وأسعار تنافسية. أفضل متجر في العراق بدون شك.", imageUrl: "https://randomuser.me/api/portraits/men/75.jpg", rating: 5, order: 5, active: true },
 ];
 
 export function Clients() {
-  // Duplicate the array to create a seamless infinite marquee effect
+  const [testimonials, setTestimonials] = useState<TestimonialData[]>(fallbackTestimonials);
+
+  useEffect(() => {
+    getActiveTestimonials().then(data => {
+      if (data.length > 0) setTestimonials(data);
+    }).catch(() => {});
+  }, []);
+
   const duplicatedTestimonials = [...testimonials, ...testimonials];
 
   return (
@@ -78,22 +52,18 @@ export function Clients() {
         </div>
       </div>
 
-      {/* Marquee Container — uses pure CSS animation instead of Framer Motion */}
+      {/* Marquee Container */}
       <div className="relative w-full overflow-hidden py-10" dir="ltr">
-        {/* Gradient Masks for smooth fade at edges */}
         <div className="absolute top-0 left-0 w-24 md:w-64 h-full bg-gradient-to-r from-black to-transparent z-20 pointer-events-none" />
         <div className="absolute top-0 right-0 w-24 md:w-64 h-full bg-gradient-to-l from-black to-transparent z-20 pointer-events-none" />
 
-        <div
-          className="flex gap-8 w-max px-4 marquee-scroll will-change-transform transform-gpu"
-        >
+        <div className="flex gap-8 w-max px-4 marquee-scroll will-change-transform transform-gpu">
           {duplicatedTestimonials.map((item, index) => (
             <div 
               key={index}
               dir="rtl"
               className="relative w-[280px] md:max-w-none md:w-[450px] bg-black rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-10 shadow-[0_10px_40px_rgba(255,255,255,0.04)] border border-gray-800 hover:shadow-[0_20px_60px_rgba(255,255,255,0.08)] hover:-translate-y-2 transition-all duration-500 flex flex-col justify-between group overflow-hidden shrink-0"
             >
-              {/* Watermark Quote */}
               <Quote className="absolute top-4 left-4 w-16 h-16 md:w-24 md:h-24 text-gray-900 opacity-50 group-hover:text-gray-800 group-hover:scale-110 transition-all duration-500 rotate-180 pointer-events-none" />
               
               <div className="relative z-10">
@@ -111,7 +81,7 @@ export function Clients() {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-tr from-gray-600 to-gray-400 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity duration-300" />
                   <img 
-                    src={item.image} 
+                    src={item.imageUrl} 
                     alt={item.name} 
                     className="relative w-10 h-10 md:w-16 md:h-16 rounded-full object-cover border-2 border-black"
                     referrerPolicy="no-referrer"

@@ -1,32 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { getActiveFAQs, type FAQData } from '../lib/firebase';
 
-const faqs = [
-  {
-    question: "كيف أستلم طلبي بعد الدفع؟",
-    answer: "بعد إتمام عملية الدفع بنجاح، سيتم إرسال تفاصيل طلبك (سواء كان حساب، اشتراك، أو كود لعبة) مباشرة إلى بريدك الإلكتروني المسجل، أو عبر رسالة نصية/واتساب حسب وسيلة التواصل التي اخترتها."
-  },
-  {
-    question: "هل الحسابات والاشتراكات مضمونة؟",
-    answer: "نعم، جميع منتجاتنا مضمونة 100%. نحن نتعامل مع مصادر موثوقة ونقدم ضماناً كاملاً على جميع الاشتراكات والحسابات طوال فترة الصلاحية المحددة."
-  },
-  {
-    question: "ما هي طرق الدفع المتاحة؟",
-    answer: "نوفر طرق دفع متعددة وآمنة تناسب الجميع في العراق، بما في ذلك ماستر كارد، زين كاش، آسيا حوالة، والبطاقات البنكية المعتمدة."
-  },
-  {
-    question: "هل يمكنني استرجاع المبلغ إذا واجهت مشكلة؟",
-    answer: "بشكل عام، لا يمكن استرداد المبلغ بعد استلام الطلب. ولكن في حال مواجهة أي مشكلة، يرجى التواصل معنا؛ وسنقوم بدراسة الحالة لمعرفة نوع المشكلة، وبناءً عليها نقرر الإجراء الأنسب، سواء كان ذلك باستبدال المنتج أو استرجاع المبلغ بما يضمن حقك."
-  },
-  {
-    question: "هل تبيعون بالجملة لأصحاب المتاجر؟",
-    answer: "نعم، بكل تأكيد! نحن نوفر أسعاراً خاصة ومنافسة جداً لطلبات الجملة المخصصة لأصحاب المتاجر وسناتر الألعاب (Gaming Centers). يمكنك التواصل مع فريق الدعم للحصول على قائمة أسعار الجملة وعروضنا الحصرية."
-  },
-  {
-    question: "متى تكون خدمة العملاء متاحة؟",
-    answer: "فريق خدمة العملاء لدينا متواجد لخدمتكم يومياً خلال ساعات العمل الرسمية: من الساعة 12:00 ظهراً (12 PM) وحتى الساعة 12:00 منتصف الليل (12 AM)."
-  }
+const fallbackFaqs: FAQData[] = [
+  { question: "كيف أستلم طلبي بعد الدفع؟", answer: "بعد إتمام عملية الدفع بنجاح، سيتم إرسال تفاصيل طلبك مباشرة إلى بريدك الإلكتروني المسجل، أو عبر رسالة نصية/واتساب حسب وسيلة التواصل التي اخترتها.", order: 1, active: true },
+  { question: "هل الحسابات والاشتراكات مضمونة؟", answer: "نعم، جميع منتجاتنا مضمونة 100%. نحن نتعامل مع مصادر موثوقة ونقدم ضماناً كاملاً على جميع الاشتراكات والحسابات طوال فترة الصلاحية المحددة.", order: 2, active: true },
+  { question: "ما هي طرق الدفع المتاحة؟", answer: "نوفر طرق دفع متعددة وآمنة تناسب الجميع في العراق، بما في ذلك ماستر كارد، زين كاش، آسيا حوالة، والبطاقات البنكية المعتمدة.", order: 3, active: true },
+  { question: "هل يمكنني استرجاع المبلغ إذا واجهت مشكلة؟", answer: "بشكل عام، لا يمكن استرداد المبلغ بعد استلام الطلب. ولكن في حال مواجهة أي مشكلة، يرجى التواصل معنا؛ وسنقوم بدراسة الحالة لمعرفة نوع المشكلة، وبناءً عليها نقرر الإجراء الأنسب.", order: 4, active: true },
+  { question: "هل تبيعون بالجملة لأصحاب المتاجر؟", answer: "نعم، بكل تأكيد! نحن نوفر أسعاراً خاصة ومنافسة جداً لطلبات الجملة المخصصة لأصحاب المتاجر وسناتر الألعاب. يمكنك التواصل مع فريق الدعم للحصول على قائمة أسعار الجملة.", order: 5, active: true },
+  { question: "متى تكون خدمة العملاء متاحة؟", answer: "فريق خدمة العملاء لدينا متواجد لخدمتكم يومياً خلال ساعات العمل الرسمية: من الساعة 12:00 ظهراً وحتى الساعة 12:00 منتصف الليل.", order: 6, active: true },
 ];
 
 interface FAQItemProps {
@@ -82,7 +65,14 @@ const FAQItem: React.FC<FAQItemProps> = ({ faq, index, isOpen, toggleOpen }) => 
 }
 
 export function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // First one open by default
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [faqs, setFaqs] = useState<FAQData[]>(fallbackFaqs);
+
+  useEffect(() => {
+    getActiveFAQs().then(data => {
+      if (data.length > 0) setFaqs(data);
+    }).catch(() => {});
+  }, []);
 
   return (
     <section className="py-16 md:py-24 relative bg-black overflow-hidden content-auto" dir="rtl">
@@ -128,7 +118,7 @@ export function FAQ() {
         <div className="flex flex-col gap-4">
           {faqs.map((faq, index) => (
             <FAQItem 
-              key={index} 
+              key={faq.id || index} 
               faq={faq} 
               index={index} 
               isOpen={openIndex === index} 

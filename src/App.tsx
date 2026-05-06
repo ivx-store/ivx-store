@@ -21,11 +21,12 @@ import { AdminMessages } from "./components/admin/AdminMessages";
 import { AdminSettings } from "./components/admin/AdminSettings";
 import { AdminUsers } from "./components/admin/AdminUsers";
 import { AdminCategories } from "./components/admin/AdminCategories";
+import { AdminContent } from "./components/admin/AdminContent";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { CustomCursor } from "./components/CustomCursor";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { SeoHead } from "./components/SeoHead";
-import { LayoutGrid, Package, Flame, ClipboardList, MessageCircle, Settings, Users, AlertCircle, FolderOpen } from "lucide-react";
+import { LayoutGrid, Package, Flame, ClipboardList, MessageCircle, Settings, Users, AlertCircle, FolderOpen, FileText } from "lucide-react";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { CategoryServicesPage } from "./pages/CategoryServicesPage";
 import { onAuthChange, updateUserPresence, updateGuestPresence, checkUserBanned, logoutAdmin, type User } from "./lib/firebase";
@@ -79,6 +80,11 @@ function AnimatedRoutes() {
         <Route path="/admin/categories" element={
           <AdminSubPage title="الأقسام" icon={<FolderOpen size={22} />} iconColor="#f59e0b">
             <AdminCategories />
+          </AdminSubPage>
+        } />
+        <Route path="/admin/content" element={
+          <AdminSubPage title="المحتوى" icon={<FileText size={22} />} iconColor="#14b8a6">
+            <AdminContent />
           </AdminSubPage>
         } />
       </Routes>
